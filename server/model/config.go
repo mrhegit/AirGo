@@ -9,7 +9,7 @@ type Config struct {
 
 // mysql配置
 type Mysql struct {
-	Path         string `mapstructure:"path" json:"path" yaml:"path"`                               // 服务器地址:端口
+	Address      string `mapstructure:"address" json:"address" yaml:"address"`                      // 服务器地址:端口
 	Port         string `mapstructure:"port" json:"port" yaml:"port"`                               //:端口
 	Config       string `mapstructure:"config" json:"config" yaml:"config"`                         // 高级配置
 	Dbname       string `mapstructure:"db-name" json:"db-name" yaml:"db-name"`                      // 数据库名

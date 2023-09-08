@@ -166,10 +166,12 @@ type NodeStatus struct {
 	D           float64   `json:"d"`
 }
 
+// 共享节点
 type NodeShared struct {
 	Node
 }
 
+// 新建共享节点
 type NodeSharedReq struct {
 	Url string `json:"url"`
 }

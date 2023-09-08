@@ -9,3 +9,4 @@ server/logs
 server/main
 server/install.sh
 server/initialize
+server/air.db

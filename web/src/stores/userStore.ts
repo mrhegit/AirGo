@@ -8,6 +8,9 @@ import {ElMessage} from "element-plus";
 const userApi = useUserApi()
 //server store
 import {useServerStore} from "/@/stores/serverStore";
+//publicStore
+import {usePublicStore} from "/@/stores/publicStore";
+const publicStore = usePublicStore()
 
 export const useUserStore = defineStore('userInfo', {
     state: () => ({
@@ -16,7 +19,11 @@ export const useUserStore = defineStore('userInfo', {
             user_name: '',
             password: '',
             email_code: '',
-        },
+            base64_captcha:{
+                id:'',
+                b64s:'',
+            }
+        } as LoginForm,
         //注册数据
         registerData: {
             user_name: '',
@@ -25,6 +32,10 @@ export const useUserStore = defineStore('userInfo', {
             re_password: '',
             email_code: '',
             referrer_code: '',
+            base64_captcha:{
+                id:'',
+                b64s:'',
+            }
         } as RegisterForm,
         //全局用户信息
         userInfos: {
@@ -102,11 +113,12 @@ export const useUserStore = defineStore('userInfo', {
     actions: {
         //注册
         async register(form?: object) {
-            // console.log("用户注册信息：",this.registerData)
             const referrerCode:string = Local.get('invitation')
             if (referrerCode.length === 8){
                 this.registerData.referrer_code =referrerCode
             }
+            this.registerData.base64_captcha.id=publicStore.base64CaptchaData.id
+            // console.log("用户注册信息：",this.registerData)
             const res = await userApi.registerApi(this.registerData)
             return res
         },

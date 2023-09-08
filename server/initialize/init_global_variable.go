@@ -3,11 +3,10 @@ package initialize
 import (
 	"AirGo/global"
 	"AirGo/service"
-	"AirGo/utils/base64captcha_plugin"
 	"AirGo/utils/casbin_plugin"
 	"AirGo/utils/logrus_plugin"
 	"AirGo/utils/mail_plugin"
-	time_duration "AirGo/utils/time_plugin"
+	"AirGo/utils/time_plugin"
 	"AirGo/utils/websocket_plugin"
 	"github.com/mojocn/base64Captcha"
 	"github.com/songzhibin97/gkit/cache/local_cache"
@@ -18,9 +17,12 @@ import (
 func InitGlobalVariable() {
 
 }
+
 func InitBase64Captcha() {
+	// base64Captcha.DefaultMemStore 是默认的过期时间10分钟。也可以自己设定参数 base64Captcha.NewMemoryStore(GCLimitNumber, Expiration)
 	global.Base64CaptchaStore = base64Captcha.DefaultMemStore
-	global.Base64Captcha = base64captcha_plugin.InitBase64Captcha()
+	driver := base64Captcha.NewDriverDigit(38, 120, 4, 0.2, 10)
+	global.Base64Captcha = base64Captcha.NewCaptcha(driver, global.Base64CaptchaStore)
 }
 
 func InitLogrus() {
@@ -64,9 +66,9 @@ func InitEmailDialer() {
 }
 func InitLocalCache() {
 	//判断有没有设置时间
-	dr, err := time_duration.ParseDuration(global.Server.JWT.ExpiresTime)
-	if err != nil {
-		panic(err)
+	dr := time.Hour
+	if global.Server.JWT.ExpiresTime != "" {
+		dr, _ = time_plugin.ParseDuration(global.Server.JWT.ExpiresTime)
 	}
 	//初始化local cache配置
 	global.LocalCache = local_cache.NewCache(

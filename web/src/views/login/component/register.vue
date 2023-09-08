@@ -40,6 +40,23 @@
         </template>
       </el-input>
     </el-form-item>
+    <!--    base64验证码-->
+    <el-form-item prop="b64s">
+      <el-col :span="10" style="display: flex;align-items: center">
+        <el-input text placeholder="输入验证码" v-model="registerData.base64_captcha.b64s" clearable autocomplete="off">
+          <template #prefix>
+            <el-icon>
+              <ele-Position/>
+            </el-icon>
+          </template>
+        </el-input>
+      </el-col>
+      <el-col :span="4"></el-col>
+      <el-col :span="10">
+        <img :src="publicStore.base64CaptchaData.b64s" @click="refreshCaptcha"/>
+      </el-col>
+
+    </el-form-item>
 
     <el-form-item v-if="publicServerConfig.enable_email_code">
       <el-col :span="13">
@@ -69,31 +86,35 @@
 </template>
 
 <script setup lang="ts" name="loginMobile">
-import {reactive,ref} from 'vue';
+import {onMounted, reactive, ref} from 'vue';
+import type {FormInstance, FormRules} from 'element-plus'
 import {ElMessage} from 'element-plus';
-import type { FormInstance, FormRules } from 'element-plus'
 //user store
 import {useUserStore} from "/@/stores/userStore";
 import {storeToRefs} from 'pinia';
-
-const userStore = useUserStore()
-const {registerData} = storeToRefs(userStore)
 // router
-import {useRoute, useRouter} from 'vue-router';
-const router = useRouter();
+import {useRouter} from 'vue-router';
 //theme store
 import {useThemeConfig} from '/@/stores/themeConfig';
-const storesThemeConfig = useThemeConfig();
-const {themeConfig} = storeToRefs(storesThemeConfig);
 //serverStore
 import {useServerStore} from "/@/stores/serverStore";
-const serverStore=useServerStore()
-const {publicServerConfig}=storeToRefs(serverStore)
+//publicStore
+import {usePublicStore} from "/@/stores/publicStore";
 //api
-import {useSystemApi} from '/@/api/system/index'
+import {usePublicApi} from '/@/api/public/index'
 import {Local} from "/@/utils/storage";
 
-const systemApi = useSystemApi()
+const userStore = useUserStore()
+const {registerData, loginData} = storeToRefs(userStore)
+const router = useRouter();
+const storesThemeConfig = useThemeConfig();
+const {themeConfig} = storeToRefs(storesThemeConfig);
+const serverStore = useServerStore()
+const {publicServerConfig} = storeToRefs(serverStore)
+const publicStore = usePublicStore()
+
+
+const publicApi = usePublicApi()
 //定义参数
 const state = reactive({
   isShowPassword: false,
@@ -107,14 +128,15 @@ const state = reactive({
 //注册
 const onRegister = () => {
   userStore.register().then((res) => {
-    if (res.code === 0) {
-      ElMessage.success('注册成功，前往登录...')
-      Local.clear() //删除缓存（包含邀请码数据）
-      setTimeout(() => {
-        window.location.href = '/'; // 去登录页
-        //router.push('/'); // 去登录页
-      }, 500)
-    }
+    ElMessage.success('注册成功，前往登录...')
+    Local.clear() //删除缓存（包含邀请码数据）
+    setTimeout(() => {
+      window.location.href = '/'; // 去登录页
+      //router.push('/'); // 去登录页
+    }, 500)
+
+  }).catch(() => {
+    refreshCaptcha()
   })
 }
 //获取邮件验证码
@@ -122,7 +144,7 @@ const onGetEmailCode = () => {
   if (registerData.value.user_name === '') {
     return
   }
-  systemApi.getEmailCodeApi(userStore.registerData).then((res) => {
+  publicApi.getEmailCodeApi(userStore.registerData).then((res) => {
     if (res.code === 0) {
       state.isCountDown = true
       ElMessage.success(res.msg)
@@ -149,19 +171,19 @@ const handleTimeChange = () => {
 const ruleFormRef = ref<FormInstance>()
 const registerRules = reactive<FormRules<RegisterForm>>({
   user_name: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 8, max: 20, message: '长度8～20', trigger: 'blur' },
+    {required: true, message: '请输入用户名', trigger: 'blur'},
+    {min: 4, max: 40, message: '长度4～40', trigger: 'blur'},
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 20, message: '密码长度8～20', trigger: 'blur' },
+    {required: true, message: '请输入密码', trigger: 'blur'},
+    {min: 8, max: 20, message: '密码长度8～20', trigger: 'blur'},
   ],
   re_password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 20, message: '密码长度8～20', trigger: 'blur' },
-  ]
+    {required: true, message: '请输入密码', trigger: 'blur'},
+    {min: 8, max: 20, message: '密码长度8～20', trigger: 'blur'},
+  ],
 })
-
+// 提交表单，验证表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
@@ -173,8 +195,14 @@ const submitForm = async (formEl: FormInstance | undefined) => {
     }
   })
 }
+// 刷新base64Captcha
+const refreshCaptcha = () => {
+  publicStore.getBase64Captcha()
+}
 
-
+onMounted(() => {
+  publicStore.getBase64Captcha()
+});
 </script>
 
 

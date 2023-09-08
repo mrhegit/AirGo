@@ -51,7 +51,7 @@ func GormSqlite() *gorm.DB {
 // 初始化Mysql数据库
 func GormMysql() *gorm.DB {
 	mysqlConfig := mysql.Config{
-		DSN:                       global.Config.Mysql.Username + ":" + global.Config.Mysql.Password + "@tcp(" + global.Config.Mysql.Path + ":" + global.Config.Mysql.Port + ")/" + global.Config.Mysql.Dbname + "?" + global.Config.Mysql.Config,
+		DSN:                       global.Config.Mysql.Username + ":" + global.Config.Mysql.Password + "@tcp(" + global.Config.Mysql.Address + ":" + global.Config.Mysql.Port + ")/" + global.Config.Mysql.Dbname + "?" + global.Config.Mysql.Config,
 		DefaultStringSize:         191, // string 类型字段的默认长度
 		SkipInitializeWithVersion: false,
 	}

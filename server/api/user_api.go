@@ -22,31 +22,36 @@ import (
 )
 
 // 用户注册
-func Register(c *gin.Context) {
+func Register(ctx *gin.Context) {
 	if !global.Server.System.EnableRegister {
-		response.Fail("已关闭注册", nil, c)
+		response.Fail("已关闭注册", nil, ctx)
 		return
 	}
 	var u model.UserRegister
-	err := c.ShouldBind(&u)
+	err := ctx.ShouldBind(&u)
 	if err != nil {
 		global.Logrus.Error("注册参数错误:", err.Error())
-		response.Fail("注册参数错误"+err.Error(), nil, c)
+		response.Fail("注册参数错误"+err.Error(), nil, ctx)
 		return
 	}
 	//fmt.Println("注册", u)
+	//处理base64Captcha
+	if !global.Base64CaptchaStore.Verify(u.Base64Captcha.ID, u.Base64Captcha.B64s, true) {
+		response.Fail("验证码错误", nil, ctx) //验证错误会清除store中的value，需要前端重新获取
+		return
+	}
 	//校验邮箱验证码
 	if global.Server.System.EnableEmailCode {
 		cacheEmail, ok := global.LocalCache.Get(u.UserName + "emailcode")
 		global.LocalCache.Delete(u.UserName + "emailcode")
 		if ok {
 			if cacheEmail != u.EmailCode {
-				response.Fail("邮箱验证码校验错误", nil, c)
+				response.Fail("邮箱验证码校验错误", nil, ctx)
 				return
 			}
 		} else {
 			//cache获取验证码失败,原因：1超时 2系统错误
-			response.Fail("邮箱验证码超时，请重新获取", nil, c)
+			response.Fail("邮箱验证码超时，请重新获取", nil, ctx)
 			return
 		}
 	}
@@ -58,10 +63,10 @@ func Register(c *gin.Context) {
 	})
 	if err != nil {
 		global.Logrus.Error("注册错误:", err.Error())
-		response.Fail("注册错误"+err.Error(), nil, c)
+		response.Fail("注册错误"+err.Error(), nil, ctx)
 		return
 	}
-	response.OK("注册成功", nil, c)
+	response.OK("注册成功", nil, ctx)
 }
 
 // 用户登录

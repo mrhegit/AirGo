@@ -22,14 +22,15 @@ func main() {
 			initialize.InitCasbin()     //加载casbin
 		}
 	}
-	initialize.InitServer()     //全局系统配置
-	initialize.InitTheme()      //全局主题
-	initialize.InitLocalCache() //local cache
-	//initialize.InitBase64Captcha() //Base64Captcha
-	initialize.InitCrontab()      //定时任务
-	initialize.InitAlipayClient() //alipay
-	initialize.InitEmailDialer()  //gomail Dialer
-	initialize.InitWebsocket()    //websocket
-	initialize.InitRatelimit()    //限流
-	initialize.InitRouter()       //初始总路由
+	initialize.InitServer()        //全局系统配置
+	initialize.InitTheme()         //全局主题
+	initialize.InitLocalCache()    //local cache
+	initialize.InitBase64Captcha() //Base64Captcha
+	initialize.InitCrontab()       //定时任务
+	initialize.InitAlipayClient()  //alipay
+	initialize.InitEmailDialer()   //gomail Dialer
+	initialize.InitWebsocket()     //websocket
+	initialize.InitRatelimit()     //限流
+	initialize.InitRouter()        //初始总路由
+
 }

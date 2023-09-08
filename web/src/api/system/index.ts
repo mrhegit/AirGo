@@ -2,14 +2,6 @@ import service from "/@/utils/request";
 
 export function useSystemApi() {
     return {
-        //获取邮箱验证码
-        getEmailCodeApi: (data?: object) => {
-            return service({
-                url: '/email/getEmailCode',
-                method: 'POST',
-                data
-            })
-        },
         //从服务器获取主题配置
         getThemeConfigApi: (params?: object) => {
             return service({

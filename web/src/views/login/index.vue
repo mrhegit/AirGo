@@ -42,7 +42,7 @@
     </div>
     <LayoutFooter class="login-footer" v-if="isFooter"/>
   </div>
-  <Muyu></Muyu>
+<!--  <Muyu></Muyu>-->
 </template>
 
 <script setup lang="ts" name="loginIndex">
@@ -64,7 +64,7 @@ const Account = defineAsyncComponent(() => import('/@/views/login/component/acco
 const Register = defineAsyncComponent(() => import('/@/views/login/component/register.vue'));
 const Scan = defineAsyncComponent(() => import('/@/views/login/component/scan.vue'));
 const LayoutFooter = defineAsyncComponent(() => import('/@/layout/footer/index.vue'));
-const Muyu = defineAsyncComponent(() => import('/@/views/login/component/muyu.vue'));
+// const Muyu = defineAsyncComponent(() => import('/@/views/login/component/muyu.vue'));
 // 定义变量内容
 const storesThemeConfig = useThemeConfig();
 const {themeConfig} = storeToRefs(storesThemeConfig);
@@ -301,10 +301,10 @@ onMounted(() => {
   transform: translate(-50%, -50%); /* 50%为自身尺寸的一半 */
 }
 
-.muyu {
-  position: absolute;
-  left: 50%;
-  top: 90%;
-  transform: translate(-50%, -50%); /* 50%为自身尺寸的一半 */
-}
+//.muyu {
+//  position: absolute;
+//  left: 50%;
+//  top: 90%;
+//  transform: translate(-50%, -50%); /* 50%为自身尺寸的一半 */
+//}
 </style>

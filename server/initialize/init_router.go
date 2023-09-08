@@ -51,10 +51,12 @@ func InitRouter() {
 	Router.StaticFS("/web", http.FS(NewResource()))      //静态资源
 	Router.Use(middleware.Cors(), middleware.Recovery()) //不开启跨域验证码出错
 	RouterGroup := Router.Group("/")
-	//email
-	emailRouter := RouterGroup.Group("email").Use(middleware.RateLimitIP())
+	//public
+	publicRouter := RouterGroup.Group("public").Use(middleware.RateLimitIP())
 	{
-		emailRouter.POST("getEmailCode", api.GetMailCode) //获取验证码
+		publicRouter.POST("getEmailCode", api.GetMailCode)         //获取验证码
+		publicRouter.GET("getBase64Captcha", api.GetBase64Captcha) //获取base64Captcha
+
 	}
 
 	//user

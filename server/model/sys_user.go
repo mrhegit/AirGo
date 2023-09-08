@@ -52,7 +52,6 @@ type SubscribeInfo struct {
 	ResetDay       int64      `json:"reset_day"         gorm:"comment:流量重置日"`                  //流量重置日
 	NodeSpeedLimit int64      `json:"node_speedlimit"   gorm:"default:0;comment:限速Mbps（Mbps）"` //限速Mbps（Mbps）
 	NodeConnector  int64      `json:"node_connector"    gorm:"default:3;comment:连接客户端数"`       //连接客户端数
-	//IsMultiUser    int64    `json:"is_multi_user" gorm:"default:0"`   //is_multi_user==0>非单端口多用户承载端口  is_multi_user==1>混淆式单端口多用户承载端口  is_multi_user==2>协议式单端口多用户承载端口
 }
 
 // 用户与角色 多对多 表
@@ -63,24 +62,25 @@ type UserAndRole struct {
 
 // 用户登录/重置密码 请求
 type UserLogin struct {
-	UserName  string `json:"user_name" binding:"required,email,max=40,min=8"` // 用户名
+	UserName  string `json:"user_name" binding:"required,email,max=40,min=4"` // 用户名
 	Password  string `json:"password" binding:"required,max=20,min=4"`        // 密码
 	EmailCode string `json:"email_code"`                                      //邮箱验证码
 }
 
 // 用户注册 请求
 type UserRegister struct {
-	UserName     string `json:"user_name"    binding:"required,max=40,min=8"`                  // 用户名
-	EmailSuffix  string `json:"email_suffix" binding:"required,max=40"`                        // 邮箱后缀
-	Password     string `json:"password"     binding:"required,max=20,min=4"`                  // 密码
-	RePassword   string `json:"re_password"  binding:"required,eqfield=Password,max=20,min=4"` // 密码
-	EmailCode    string `json:"email_code"`                                                    //邮箱验证码
-	ReferrerCode string `json:"referrer_code"`
+	UserName      string            `json:"user_name"    binding:"required,max=40,min=4"`                  // 用户名
+	EmailSuffix   string            `json:"email_suffix" binding:"required,max=40"`                        // 邮箱后缀
+	Password      string            `json:"password"     binding:"required,max=20,min=4"`                  // 密码
+	RePassword    string            `json:"re_password"  binding:"required,eqfield=Password,max=20,min=4"` // 密码
+	EmailCode     string            `json:"email_code"`                                                    //邮箱验证码
+	ReferrerCode  string            `json:"referrer_code"`
+	Base64Captcha Base64CaptchaInfo `json:"base64_captcha"`
 }
 
 // 用户注册 校验邮箱
 type UserRegisterEmail struct {
-	UserName string `json:"user_name" binding:"required,email,max=40,min=8"` // 用户名
+	UserName string `json:"user_name" binding:"required,email,max=40,min=4"` // 用户名
 }
 
 // 新建用户/修改用户请求
