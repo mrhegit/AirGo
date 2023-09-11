@@ -44,7 +44,7 @@
       </el-table>
       <el-pagination
           background
-          :page-sizes="[10, 20, 30]"
+          :page-sizes="[10, 30, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="onHandleSizeChange" @current-change="onHandleCurrentChange" class="mt15"
           v-model:current-page="state.params.page_num"
@@ -84,7 +84,7 @@ const state = reactive({
   params: {
     search: '',
     page_num: 1,
-    page_size: 10,
+    page_size: 30,
   },
 })
 // 打开新增角色弹窗

@@ -2,48 +2,45 @@
   <div>
     <el-dialog v-model="state.isShowSubmitOrderDialog" title="订单详情" width="50%">
       <div class="home-card-item">
-        <el-card>
-          <div>
+
+          <div class="card-text">
+            <el-button class="card-text-left" type="warning">订购套餐</el-button>
             <el-text class="card-header-left">{{ shopData.currentGoods.subject }}</el-text>
           </div>
           <div class="card-text">
-            <el-tag class="card-text-left">套餐流量</el-tag>
+            <el-button class="card-text-left" type="warning">套餐流量</el-button>
             <span class="card-text-right">{{ shopData.currentGoods.total_bandwidth }}GB</span>
           </div>
           <div class="card-text">
-            <el-tag class="card-text-left" type="warning">有效期</el-tag>
+            <el-button class="card-text-left" type="warning">有效期</el-button>
             <span class="card-text-right">{{ shopData.currentGoods.expiration_date }}天</span>
           </div>
           <div v-html="shopData.currentGoods.des"></div>
-        </el-card>
-      </div>
-      <div class="home-card-item">
-        <el-card>
+          <el-divider></el-divider>
           <div class="card-text">
             <el-input v-model="shopData.currentOrder.coupon_name" placeholder="输入折扣码"></el-input>
             <el-button class="card-text-right" color="blue" size="default" @click="varifyCoupon">验证</el-button>
           </div>
           <div class="card-text">
-            <el-button class="card-text-left" type="primary" plain>金额：</el-button>
+            <el-button class="card-text-left" type="info" >金额</el-button>
             <el-text class="card-text-right">{{ shopData.currentOrder.price }}</el-text>
           </div>
           <div class="card-text">
-            <el-button class="card-text-left" type="primary" plain>优惠码折扣：</el-button>
+            <el-button class="card-text-left" type="info" >优惠码折扣</el-button>
             <el-text class="card-text-right">-{{ shopData.currentOrder.coupon_amount }}</el-text>
           </div>
           <div class="card-text">
-            <el-button class="card-text-left" type="primary" plain>旧套餐抵扣：</el-button>
+            <el-button class="card-text-left" type="info" >旧套餐抵扣</el-button>
             <el-text class="card-text-right">-{{ shopData.currentOrder.deduction_amount }}</el-text>
           </div>
           <div class="card-text">
-            <el-button class="card-text-left" type="primary" plain>余额抵扣：</el-button>
+            <el-button class="card-text-left" type="info" >余额抵扣</el-button>
             <el-text class="card-text-right">-{{ shopData.currentOrder.remain_amount }}</el-text>
           </div>
           <div class="card-text">
-            <el-text class="card-text-left" style="font-size: 25px;">应付：</el-text>
+            <el-text class="card-text-left" style="font-size: 25px;">应付</el-text>
             <el-text class="card-text-right" style="font-size: 25px;">{{ shopData.currentOrder.total_amount }}</el-text>
           </div>
-        </el-card>
       </div>
       <template #footer>
             <span class="dialog-footer">
@@ -136,6 +133,7 @@ defineExpose({
 
 .card-text {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   height: 35px
 }

@@ -1,13 +1,18 @@
-package osInfo_plugin
+package os_plugin
 
 import (
-	"runtime"
-	"time"
-
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
+	"os"
+	"os/exec"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
 )
+
+const query = "ps -ef | grep rp1 | grep -v grep | grep -v rp2 | awk '{print $2}'"
 
 const (
 	B  = 1
@@ -95,4 +100,17 @@ func InitDisk() (d Disk, err error) {
 		d.UsedPercent = int(u.UsedPercent)
 	}
 	return d, nil
+}
+
+func StopProcess(name string) {
+	text := strings.Replace(query, "rp1", name, -1)
+	text = strings.Replace(text, "rp2", strconv.Itoa(os.Getpid()), -1)
+	os.WriteFile("temp.sh", []byte(text), 0777)
+	defer os.Remove("temp.sh")
+
+	out, err := exec.Command("bash", "temp.sh").Output()
+	if err != nil {
+		return
+	}
+	exec.Command("kill", "-2", strings.TrimSpace(string(out))).Run()
 }

@@ -31,6 +31,7 @@ func Gorm() *gorm.DB {
 
 // 初始化sqlite数据库
 func GormSqlite() *gorm.DB {
+
 	if db, err := gorm.Open(sqlite.Open(global.Config.Sqlite.Path), &gorm.Config{
 		SkipDefaultTransaction: true, //关闭事务，将获得大约 30%+ 性能提升
 		NamingStrategy: schema.NamingStrategy{

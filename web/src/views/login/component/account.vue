@@ -220,11 +220,11 @@ const ruleFormRef = ref<FormInstance>()
 const loginRules = reactive<FormRules<RegisterForm>>({
   user_name: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 8, max: 20, message: '长度8～20', trigger: 'blur' },
+    { min: 4, max: 40, message: '长度4～40', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 20, message: '密码长度8～20', trigger: 'blur' },
+    { min: 4, max: 20, message: '密码长度4～20', trigger: 'blur' },
   ],
 })
 

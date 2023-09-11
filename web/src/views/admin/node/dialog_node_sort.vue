@@ -7,7 +7,7 @@
   >
     <el-table class="nodeSort" :data="state.node_list" row-key="id" height="100%" style="width: 100%;flex: 1;">
       <el-table-column type="index" label="序号" show-overflow-tooltip width="60" fixed></el-table-column>
-      <el-table-column prop="name" label="节点名称" show-overflow-tooltip width="300" fixed></el-table-column>
+      <el-table-column prop="remarks" label="节点名称" show-overflow-tooltip width="300" fixed></el-table-column>
       <el-table-column prop="id" label="节点ID" show-overflow-tooltip width="60" fixed></el-table-column>
       <el-table-column label="操作" show-overflow-tooltip fixed>
         <el-icon class="move">

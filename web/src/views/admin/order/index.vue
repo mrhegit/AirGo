@@ -61,7 +61,7 @@
       <el-pagination background
                      class="mt15"
                      layout="total, sizes, prev, pager, next, jumper"
-                     :page-sizes="[10, 20, 30]"
+                     :page-sizes="[10, 30, 50]"
                      v-model:current-page="state.params.page_num"
                      v-model:page-size="state.params.page_size"
                      :total="orderManageData.allOrders.total"
@@ -97,7 +97,7 @@ const reportApi = useReportApi()
 const state = reactive({
   params: {
     page_num: 1,
-    page_size: 10,
+    page_size: 30,
     search: '',
     date: [],
   } as QueryParams,

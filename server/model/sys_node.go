@@ -81,7 +81,7 @@ type Node struct {
 	SpiderX   string `json:"spx"` //reality
 }
 
-// sspanel vmess 格式
+// vmess 格式
 type Vmess struct {
 	V            string `json:"v" `   //
 	Name         string `json:"ps"`   //节点名
@@ -94,6 +94,9 @@ type Vmess struct {
 	Host         string `json:"host"` //伪装域名
 	Path         string `json:"path"` //
 	Tls          string `json:"tls"`  //传输层安全
+	Alpn         string `json:"alpn"`
+	Fp           string `json:"fp"`
+	Sni          string `json:"sni"`
 }
 
 // clash  yaml格式
@@ -111,31 +114,66 @@ type ClashYaml struct {
 	Rules              []string          `yaml:"rules"`
 }
 type ClashProxy struct {
-	Name      string    `yaml:"name"`
-	Type      string    `yaml:"type"`
-	Server    string    `yaml:"server"`
-	Port      string    `yaml:"port"`
-	Uuid      string    `yaml:"uuid"`
-	Alterid   string    `yaml:"alterId"`
-	Cipher    string    `yaml:"cipher"`
-	Udp       bool      `yaml:"udp"`
-	Network   string    `yaml:"network"`
-	WsPath    string    `yaml:"ws-path"`
-	WsHeaders WsHeaders `yaml:"ws-headers"`
-	WsOpts    WsOpts    `yaml:"ws-opts"`
-	Tls       bool      `yaml:"tls"`
-	Sni       string    `yaml:"sni"`
-	Password  string    `yaml:"password"` //trojan 参数
+	//基础参数
+	Name    string `yaml:"name"`
+	Type    string `yaml:"type"`
+	Server  string `yaml:"server"`
+	Port    int    `yaml:"port"`
+	Uuid    string `yaml:"uuid"`
+	Network string `yaml:"network"`
+	Udp     bool   `yaml:"udp"`
+	//vmess参数
+	Alterid string `yaml:"alterId"` //0
+	Cipher  string `yaml:"cipher"`  //auto
+	//trojan 参数
+	Password string `yaml:"password"`
 
+	//vless流控
+	Flow string `yaml:"flow"`
+
+	Tls               bool     `yaml:"tls"`
+	Sni               string   `yaml:"sni"`
+	ClientFingerprint string   `yaml:"client-fingerprint"` // # Available: "chrome","firefox","safari","ios","random", currently only support TLS transport in TCP/GRPC/WS/HTTP for VLESS/Vmess and trojan.
+	Alpn              []string `yaml:"alpn"`               //h2 http/1.1
+	Servername        string   `yaml:"servername"`         //REALITY servername
+	SkipCertVerify    bool     `yaml:"skip-cert-verify"`
+
+	//WsPath    string    `yaml:"ws-path"`
+	//WsHeaders WsHeaders `yaml:"ws-headers"`
+	WsOpts      WsOpts      `yaml:"ws-opts"`
+	RealityOpts RealityOpts `yaml:"reality-opts"`
+	GrpcOpts    GrpcOpts    `yaml:"grpc-opts"`
+	H2Opts      H2Opts      `yaml:"h2-opts"`
 }
 
+type WsOpts struct {
+	Path                string            `yaml:"path"`
+	Headers             map[string]string `yaml:"headers"`
+	MaxEarlyData        int               `yaml:"max-early-data"`         //2048
+	EarlyDataHeaderName string            `yaml:"early-data-header-name"` //Sec-WebSocket-Protocol
+}
 type WsHeaders struct {
 	Host string `yaml:"Host"`
 }
-type WsOpts struct {
-	Path    string            `yaml:"path"`
-	Headers map[string]string `yaml:"headers"`
+
+type RealityOpts struct {
+	PublicKey string `yaml:"public-key"`
+	ShortID   string `yaml:"short-id"`
 }
+type GrpcOpts struct {
+	GrpcServiceName string `yaml:"grpc-service-name"` //grpc
+}
+
+type H2Opts struct {
+	Host []string `yaml:"host"`
+	Path string   `yaml:"path"`
+}
+type HttpOpts struct {
+	Method  string                `yaml:"method"` //GET
+	Path    map[string][]string   `yaml:"path"`
+	Headers map[string]Connection `yaml:"headers"`
+}
+type Connection []string
 
 type ClashProxyGroup struct {
 	Name    string   `yaml:"name"`

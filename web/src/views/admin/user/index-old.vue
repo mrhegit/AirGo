@@ -132,12 +132,6 @@ import {useServerStore} from "/@/stores/serverStore";
 const serverStore= useServerStore()
 const userStore = useUserStore()
 const {userManageData} = storeToRefs(userStore)
-//report store
-import {useReportStore} from "/@/stores/reportStore"
-
-
-const reportStore = useReportStore()
-const {reportTable} = storeToRefs(reportStore)
 //时间格式化
 import {DateStrtoTime} from "../../../utils/formatTime";
 
@@ -161,8 +155,9 @@ const state = reactive({
   params: {
     search: '',
     page_num: 1,
-    page_size: 30,
+    page_size: 10,
   },
+  fieldConditionList: {},
 })
 // 打开新增用户弹窗
 const onOpenAddUser = (type: string) => {
@@ -192,7 +187,7 @@ const onRowDel = (row: SysUser) => {
 // 分页改变
 const onHandleSizeChange = (val: number) => {
   if (state.isShowCollapse) {
-    getReportDataHandler(reportTable.value)
+    getReportDataHandler(state.fieldConditionList)
   } else {
     state.params.page_size = val;
     userStore.getUserList(state.params)
@@ -201,7 +196,7 @@ const onHandleSizeChange = (val: number) => {
 // 分页改变
 const onHandleCurrentChange = (val: number) => {
   if (state.isShowCollapse) {
-    getReportDataHandler(reportTable.value)
+    getReportDataHandler(state.fieldConditionList)
   } else {
     state.params.page_num = val;
     userStore.getUserList(state.params)
@@ -218,17 +213,17 @@ const onShowCollapse = () => {
   //防止子组件渲染太慢，导致undefined问题
   setTimeout(() => {
     if (state.isShowCollapse) {
-      reportRef.value.openReportComponent("user")  //参数：user库表
+      reportRef.value.openReportComponent("user")
     }
   }, 500)
 }
 //请求数据
-const getReportDataHandler = (data?: any) => {
+const getReportDataHandler = (data: any) => {
   //拼接分页参数
-  reportTable.value.pagination_params = state.params;
-  // console.log("参数：",reportTable.value)
+  (data as any).pagination_params = state.params;
+  state.fieldConditionList = data
   //请求数据
-  reportApi.submitReportApi(reportTable.value).then((res) => {
+  reportApi.submitReportApi(data).then((res) => {
     if (res.code === 0) {
       userManageData.value.users.user_list = res.data.table_data
       userManageData.value.users.total = res.data.total

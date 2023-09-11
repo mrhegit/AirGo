@@ -7,12 +7,14 @@ import (
 	"AirGo/utils/mail_plugin"
 )
 
+// 获取肢体配置
 func GetThemeConfig() (*model.Theme, error) {
 	var theme model.Theme
 	err := global.DB.First(&theme, 1).Error
 	return &theme, err
 }
 
+// 更新主题配置
 func UpdateThemeConfig(theme *model.Theme) error {
 	global.Theme = *theme
 	return global.DB.Model(&model.Theme{ID: 1}).Save(&theme).Error

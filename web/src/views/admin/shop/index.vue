@@ -22,7 +22,7 @@
         <el-table-column prop="total_amount" label="套餐价格(元)" show-overflow-tooltip width="100"></el-table-column>
         <el-table-column prop="total_bandwidth" label="总流量(GB)" show-overflow-tooltip width="100"></el-table-column>
         <el-table-column prop="expiration_date" label="有效期(天)" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="status" label="是否启用" show-overflow-tooltip>
+        <el-table-column prop="status" label="是否显示" show-overflow-tooltip>
           <template #default="scope">
             <el-tag class="ml-2" v-if="scope.row.status" type="success">启用</el-tag>
             <el-tag class="ml-2" v-if="!scope.row.status" type="danger">禁用</el-tag>

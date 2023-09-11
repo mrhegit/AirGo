@@ -18,7 +18,7 @@ type User struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"-" gorm:"index"`
 
-	ID       int64     `json:"id"      gorm:"primary_key"`
+	ID       int64     `json:"id"           gorm:"primary_key"`
 	UUID     uuid.UUID `json:"uuid"         gorm:"comment:用户UUID"`                                                                        // 用户UUID
 	UserName string    `json:"user_name"    gorm:"comment:用户登录名"`                                                                         // 用户登录名,邮箱
 	Password string    `json:"password"     gorm:"comment:用户登录密码"`                                                                        // 用户登录密码

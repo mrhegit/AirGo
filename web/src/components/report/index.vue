@@ -3,24 +3,16 @@
     <div>
       <el-button type="primary" @click="addCondition">新增条件</el-button>
     </div>
-    <el-table :data="state.reportTable.field_params_list" height="100%" style="width: 100%;flex: 1;" stripe>
+    <el-table :data="reportStoreData.reportTable.value.field_params_list" height="100%" style="width: 100%;flex: 1;" stripe>
       <el-table-column align="left" type="index" label="序列" width="60"/>
       <el-table-column align="left" prop="field" label="字段" width="160">
         <template #default="{row}">
-          <el-select v-if="dbInfo.db_type==='sqlite'" v-model="row.field" class="m-2" placeholder="选择字段">
+          <el-select  v-model="row.field" class="m-2" placeholder="选择字段">
             <el-option
-                v-for="(v,k) in sqliteColumn"
+                v-for="(v,k) in reportStoreData.fieldData.value.field_list"
                 :key="k"
-                :label="v.name"
-                :value="v.name"
-            />
-          </el-select>
-          <el-select v-if="dbInfo.db_type==='mysql'" v-model="row.field" class="m-2" placeholder="选择字段">
-            <el-option
-                v-for="(v,k) in mysqlColumn"
-                :key="k"
-                :label="v.column_name"
-                :value="v.column_name"
+                :label="v"
+                :value="v"
             />
           </el-select>
         </template>
@@ -38,9 +30,33 @@
       </el-table-column>
       <el-table-column align="left" prop="condition" label="搜索条件" width="160">
         <template #default="{row}">
-          <el-select v-model="row.condition" class="m-2" placeholder="搜索条件">
+          <el-select v-if="row.field_type === 'string'" v-model="row.condition" class="m-2" placeholder="搜索条件">
             <el-option
-                v-for="(v,k) in conditionList"
+                v-for="(v,k) in stringConditionList"
+                :key="k"
+                :label="v"
+                :value="v"
+            />
+          </el-select>
+          <el-select v-if="row.field_type === 'num'" v-model="row.condition" class="m-2" placeholder="搜索条件">
+            <el-option
+                v-for="(v,k) in numConditionList"
+                :key="k"
+                :label="v"
+                :value="v"
+            />
+          </el-select>
+          <el-select v-if="row.field_type === 'date'" v-model="row.condition" class="m-2" placeholder="搜索条件">
+            <el-option
+                v-for="(v,k) in dateConditionList"
+                :key="k"
+                :label="v"
+                :value="v"
+            />
+          </el-select>
+          <el-select v-if="row.field_type === 'bool'" v-model="row.condition" class="m-2" placeholder="搜索条件">
+            <el-option
+                v-for="(v,k) in boolConditionList"
                 :key="k"
                 :label="v"
                 :value="v"
@@ -51,12 +67,16 @@
       <el-table-column align="left" prop="conditionValue" label="条件值">
         <template #default="{row}">
           <el-date-picker
-              v-if="row.field_type==='datetime'"
+              v-if="row.field_type==='date'"
               v-model="row.condition_value"
               type="datetime"
               value-format="YYYY-MM-DD HH:mm:ss"
           />
-          <el-input v-else v-model="row.condition_value"></el-input>
+          <el-switch v-if="row.field_type==='bool'" v-model="row.condition_value" inline-prompt active-text="true"
+                     inactive-text="false"
+                     style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"></el-switch>
+          <el-input v-if="row.field_type === 'num'" v-model="row.condition_value" type="number"></el-input>
+          <el-input v-if="row.field_type === 'string'" v-model="row.condition_value"></el-input>
         </template>
       </el-table-column>
       <el-table-column align="left" label="操作">
@@ -67,7 +87,7 @@
 
     </el-table>
     <div style="margin-top: 20px">
-      <el-button @click="onSubmit()" type="primary">确定</el-button>
+      <el-button v-if="reportStoreData.reportTable.value.field_params_list.length!==0" @click="onSubmit()" type="primary">确定</el-button>
     </div>
 
   </div>
@@ -82,45 +102,30 @@ import {useReportStore} from "/@/stores/reportStore"
 import {storeToRefs} from "pinia";
 
 const reportStore = useReportStore()
-const {
-  dbInfo,
-  sqliteTable,
-  mysqlColumn,
-  mysqlColumnTypeMap,
-  mysqlColumnChineseNameMap,
-  sqliteColumn,
-  sqliteColumnTypeMap
-} = storeToRefs(reportStore)
+const reportStoreData = storeToRefs(reportStore)
 //report api
 import {useReportApi} from "/@/api/report";
 import {ElMessage} from "element-plus";
 
 const reportApi = useReportApi()
-//定义的参数
-const state = reactive({
-  //选中的数据库，库表，用来请求获取数据库的数据表的所有字段名,类型值 请求参数
-  checkedDbInfo: {
-    database: '',
-    table_name: '',
-  },
-  reportTable: {
-    table_name: '',
-    field_params_list: [] as any[]    //搜索条件列表
-  },
-})
+
 //搜索条件
-const conditionList = ['<', '>', "=", "<>", "like"]
+
+const stringConditionList = ["=", "<>", "like"]
+const numConditionList = ['<', '>', "=", "<>"]
+const boolConditionList = ["=", "<>"]
+const dateConditionList = ['<', '>', "=", "<>"]
 //子传父
 const emits = defineEmits(['getReportData'])
 
 //删除当前条件
 const deleteCurrrentCondition = (row: any) => {
-  // console.log("当前所有条件:",state.reportTable.field_params_list)
-  state.reportTable.field_params_list = state.reportTable.field_params_list.filter(item => item !== row);
+  // console.log("当前所有条件:",reportTable.value.field_params_list)
+  reportStoreData.reportTable.value.field_params_list = reportStoreData.reportTable.value.field_params_list.filter(item => item !== row);
 }
 //增加新条件
 const addCondition = () => {
-  state.reportTable.field_params_list.push({
+  reportStoreData.reportTable.value.field_params_list.push({
     field: '',
     field_chinese_name: '',
     field_type: '',
@@ -131,26 +136,22 @@ const addCondition = () => {
 
 //提交
 const onSubmit = (params?: object) => {
-  if (state.checkedDbInfo.table_name === '') {
+  if (reportStoreData.checkedDbInfo.value.table_name === '') {
     return
   }
-  //将查询参数返回父组件
-  emits('getReportData', state.reportTable)
+  //调用父组件 getReportData()方法
+  // emits('getReportData', reportTable.value)
+  emits('getReportData')
 }
 
 //监听
 watch(
-    () => state.reportTable,
+    () => reportStoreData.reportTable.value,   //数据源有变化就开始处理
     () => {
-      console.log("state.reportTable.field_params_list:",state.reportTable.field_params_list)
-      state.reportTable.field_params_list.forEach((value,index,array) => {
-        if (dbInfo.value.db_type === 'mysql') {
-          value.field_type = mysqlColumnTypeMap.value.get(value.field)
-          value.field_chinese_name = mysqlColumnChineseNameMap.value.get(value.field)
-        } else {
-          value.field_type = sqliteColumnTypeMap.value.get(value.field)
-          value.field_chinese_name = sqliteColumnTypeMap.value.get(value.field)
-        }
+      // console.log("reportTable.value.field_params_list:",reportStoreData.reportTable.value.field_params_list)
+      reportStoreData.reportTable.value.field_params_list.forEach((value,index,array) => {
+        value.field_chinese_name = reportStoreData.fieldData.value.field_chinese_name_list[value.field]
+        value.field_type = reportStoreData.fieldData.value.field_type_list[value.field]
       })
     },
     {
@@ -163,12 +164,13 @@ watch(
 
 //打开时加载数据
 const openReportComponent = (params: string) => {
-  state.checkedDbInfo.table_name = params
-  state.reportTable.table_name = params
+  //设置需要操作的库表
+  reportStoreData.checkedDbInfo.value.table_name = params
+  reportStoreData.reportTable.value.table_name = params
   //加载数据库类型
-  reportStore.getDB()
-  //加载字段
-  reportStore.getColumn(state.checkedDbInfo)
+  // reportStore.getDB()
+  //加载字段信息
+  reportStore.getColumn(reportStoreData.checkedDbInfo.value)
 }
 
 //暴露变量

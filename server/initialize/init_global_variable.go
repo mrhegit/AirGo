@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-func InitGlobalVariable() {
-
-}
-
 func InitBase64Captcha() {
 	// base64Captcha.DefaultMemStore 是默认的过期时间10分钟。也可以自己设定参数 base64Captcha.NewMemoryStore(GCLimitNumber, Expiration)
 	global.Base64CaptchaStore = base64Captcha.DefaultMemStore

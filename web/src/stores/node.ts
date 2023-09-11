@@ -22,9 +22,10 @@ export const useNodeStore = defineStore("nodeStore", {
                 id: 0,
                 node_speedlimit: 0, //节点限速/Mbps
                 traffic_rate: 0,    //倍率
-                sort: 15,            //类型 vless(15) vmess(11) trojan(14)
+                node_type: '',            //类型 vless(15) vmess(11) trojan(14)
                 server: '',
                 // type: string;//显示与隐藏
+                uuid: '',
                 //基础参数
                 remarks: '',//别名
                 address: '',

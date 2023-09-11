@@ -22,7 +22,12 @@ declare interface SqliteColumn {
 //搜索条件
 declare interface FieldTable {
     field: string;
+    field_chinese_name: string;
     field_type: string;
     condition: string;
     condition_value: string;
+}
+
+declare interface FieldType {
+
 }

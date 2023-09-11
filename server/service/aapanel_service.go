@@ -137,12 +137,12 @@ func V2rayNGSubscribe(nodes *[]model.Node, uuid, host string) string {
 			}
 			continue
 		case "vless":
-			if res := V2rayNGVless(v, uuid, host); res != "" {
+			if res := V2rayNGVlessTrojan(v, "vless", uuid, host); res != "" {
 				subArr = append(subArr, res)
 			}
 			continue
 		case "trojan":
-			if res := V2rayNGTrojan(v, uuid, host); res != "" {
+			if res := V2rayNGVlessTrojan(v, "trojan", uuid, host); res != "" {
 				subArr = append(subArr, res)
 			}
 			continue
@@ -167,17 +167,8 @@ func ClashSubscribe(nodes *[]model.Node, uuid, host string) string {
 		//
 		nameArr = append(nameArr, v.Remarks)
 
-		switch v.NodeType {
-		case "vmess":
-			proxy := ClashVmess(v, uuid, host)
-			proxiesArr = append(proxiesArr, proxy)
-		case "vless":
-			proxy := ClashVmess(v, uuid, host)
-			proxiesArr = append(proxiesArr, proxy)
-		case "trojan":
-			proxy := ClashTrojan(v, uuid, host)
-			proxiesArr = append(proxiesArr, proxy)
-		}
+		proxy := ClashVmessVlessNew(v, uuid, host)
+		proxiesArr = append(proxiesArr, proxy)
 
 	}
 	var proxyGroup model.ClashProxyGroup
@@ -206,56 +197,7 @@ func ClashSubscribe(nodes *[]model.Node, uuid, host string) string {
 
 }
 
-// ShadowRocket 订阅
-func ShadowRocketSubscribe(nodes *[]model.Node, uuid, host, name string) string {
-	// 遍历，根据node sort 节点类型 生成订阅
-	var subArr []string
-
-	for k, v := range *nodes {
-		//剔除禁用节点
-		if k == 0 || !v.Enabled {
-			continue
-		}
-		if host == "" {
-			host = v.Host
-		}
-		switch v.NodeType {
-		case "vmess":
-			if res := ShadowRocketVmess(v, uuid, host); res != "" {
-				subArr = append(subArr, res)
-			}
-			continue
-			// case 15 :
-			// 	res:=GenerateVless()
-		}
-	}
-	return "STATUS=" + name + "\r\n" + "REMARKS=" + global.Server.System.SubName + "\r\n" + strings.Join(subArr, "\r\n")
-
-}
-
-// Quantumult X 订阅
-func QxSubscribe(nodes *[]model.Node, uuid, host string) string {
-	var nodeArr []string
-	for _, v := range *nodes {
-		//剔除禁用节点
-		if !v.Enabled {
-			continue
-		}
-		if host == "" {
-			host = v.Host
-		}
-		protocolType := ""
-		switch v.NodeType {
-		case "vmess":
-			protocolType = "vmess="
-		}
-		str := protocolType + v.Address + ":" + strconv.FormatInt(v.Port, 10) + ", method=" + ", password=" + uuid + ", obfs=" + v.Network + ", obfs-uri=" + v.Path + ", obfs-host" + v.Host + ", tag=" + v.Remarks
-		nodeArr = append(nodeArr, str)
-	}
-	return strings.Join(nodeArr, "\r\n")
-
-}
-
+// {"add":"AirGo","aid":"0","alpn":"h2,http/1.1","fp":"qq","host":"www.baidu.com","id":"e0d5fe65-a5d1-4b8a-8d40-ed92a6a35d8b","net":"ws","path":"/path","port":"6666","ps":"到期时间:2024-03-06  |  剩余流量:20.00GB","scy":"auto","sni":"www.baidu.com","tls":"tls","type":"","v":"2"}
 // generate v2rayNG vmess
 func V2rayNGVmess(node model.Node, uuid, host string) string {
 	var vmess model.Vmess
@@ -271,10 +213,18 @@ func V2rayNGVmess(node model.Node, uuid, host string) string {
 	vmess.Uuid = uuid
 	vmess.Aid = strconv.FormatInt(node.Aid, 10)
 	vmess.Net = node.Network
-	vmess.Disguisetype = node.Type
+	vmess.Disguisetype = node.Type //伪装类型
 	vmess.Host = host
 	vmess.Path = node.Path
-	vmess.Tls = node.Security
+	//传输层安全
+	switch node.Security {
+	case "tls":
+		// alpn fp sni
+		vmess.Tls = node.Security
+		vmess.Alpn = node.Alpn
+		vmess.Sni = node.Sni
+	}
+
 	vmessMarshal, err := json.Marshal(vmess)
 	if err != nil {
 		return ""
@@ -284,127 +234,110 @@ func V2rayNGVmess(node model.Node, uuid, host string) string {
 }
 
 // generate  v2rayng vless
-func V2rayNGVless(node model.Node, uuid, host string) string {
-	path := url.QueryEscape(node.Path)
-	name := url.QueryEscape(node.Remarks)
-	var address, port string
-	if node.EnableTransfer {
-		address = node.TransferAddress
-		port = strconv.FormatInt(node.TransferPort, 10)
-	} else {
-		address = node.Address
-		port = strconv.FormatInt(node.Port, 10)
+// vless例子 vless://d342d11e-d424-4583-b36e-524ab1f0afa7@1.6.1.1:443?path=%2F%3Fed%3D2048&security=tls&encryption=none&alpn=h2,http/1.1&host=v2.airgoo.link&fp=randomized&flow=xtls-rprx-vision-udp443&type=ws&sni=v2.airgoo.link#v2.airgoo.link
+// vless例子 vless://d342d11e-d424-4583-b36e-524ab1f0afa7@1.6.1.4:443?path=%2F%3Fed%3D2048&security=reality&encryption=none&pbk=ppkk&host=v2.airgoo.link&fp=randomized&spx=ssxx&flow=xtls-rprx-vision-udp443&type=ws&sni=v2.airgoo.link&sid=ssdd#v2.airgoo.link
+// [scheme:][//[userinfo@]host][/]path[?query][#fragment]
+func V2rayNGVlessTrojan(node model.Node, scheme, uuid, host string) string {
+	var vlessUrl url.URL
+	vlessUrl.Scheme = scheme
+	vlessUrl.User = url.UserPassword(uuid, "")
+	vlessUrl.Host = node.Address + ":" + strconv.FormatInt(node.Port, 10)
+	values := url.Values{}
+
+	switch scheme {
+	case "vless":
+		values.Add("encryption", node.Scy)
+		values.Add("type", node.Network)
+		values.Add("host", host)
+		values.Add("path", node.Path)
+		values.Add("flow", node.VlessFlow)
+	case "trojan":
+		values.Add("headerType", node.Type)
+		values.Add("type", node.Network)
+		values.Add("host", host)
+		values.Add("path", node.Path)
+
 	}
-	str := "vless://" + uuid + "@" + address + ":" + port + "?encryption=" + node.Scy + "&type=" + node.Network + "&security=" + node.Security + "&host=" + host + "&path=" + path
-	if node.Security == "tls" || node.Security == "reality" {
-		return str + "&sni=" + node.Sni + "#" + name
+	switch node.Security {
+	case "tls":
+		values.Add("security", node.Security)
+		values.Add("alpn", node.Alpn)
+		values.Add("fp", node.Fingerprint)
+		values.Add("sni", node.Sni)
+	case "reality":
+		values.Add("security", node.Security)
+		values.Add("pbk", node.PublicKey)
+		values.Add("fp", node.Fingerprint)
+		values.Add("spx", node.SpiderX)
+		values.Add("sni", node.Sni)
+		values.Add("sid", node.ShortId)
 	}
-	return str + "#" + name
+
+	vlessUrl.RawQuery = values.Encode()
+	vlessUrl.Fragment = node.Remarks
+
+	return vlessUrl.String()
 }
 
-// generate  v2rayng trojan
-func V2rayNGTrojan(node model.Node, uuid, host string) string {
-	//trojan://59405054-d6d2-47e1-8f99-b7296be5e7a1@114.114.114.114:80?allowInsecure=0#%E6%B5%8B%E8%AF%952
-	path := url.QueryEscape(node.Path)
-	name := url.QueryEscape(node.Remarks)
-	var address, port string
-	if node.EnableTransfer {
-		address = node.TransferAddress
-		port = strconv.FormatInt(node.TransferPort, 10)
-	} else {
-		address = node.Address
-		port = strconv.FormatInt(node.Port, 10)
-	}
-	str := "trojan://" + uuid + "@" + address + ":" + port + "?security=" + node.Security + "&headerType=" + node.Type + "&type=" + node.Network + "&path=" + path + "&host=" + host
-	if node.Security == "tls" || node.Security == "reality" {
-		return str + "&sni=" + node.Sni + "#" + name
-	}
-	return str + "#" + name
-}
-
-// generate  Clash vmess vless
-func ClashVmess(v model.Node, uuid, host string) model.ClashProxy {
+// generate  Clash vmess vless trojan
+func ClashVmessVlessNew(v model.Node, uuid, host string) model.ClashProxy {
 	var proxy model.ClashProxy
 	switch v.NodeType {
 	case "vmess":
 		proxy.Type = "vmess"
+		proxy.Uuid = uuid
+		proxy.Alterid = strconv.FormatInt(v.Aid, 10)
+		proxy.Cipher = "auto"
 	case "vless":
 		proxy.Type = "vless"
+		proxy.Uuid = uuid
+		proxy.Flow = v.VlessFlow
+	case "trojan":
+		proxy.Type = "trojan"
+		proxy.Password = uuid
+		proxy.Sni = v.Sni
 	}
 	if v.EnableTransfer {
 		proxy.Server = v.TransferAddress
-		proxy.Port = strconv.FormatInt(v.TransferPort, 10)
+		proxy.Port = int(v.TransferPort)
 	} else {
 		proxy.Server = v.Address
-		proxy.Port = strconv.FormatInt(v.Port, 10)
+		proxy.Port = int(v.Port)
 	}
 	proxy.Name = v.Remarks
-	proxy.Uuid = uuid
-	proxy.Alterid = strconv.FormatInt(v.Aid, 10)
-	proxy.Cipher = "auto"
 	proxy.Udp = true
 	proxy.Network = v.Network
-	proxy.WsPath = v.Path
-	proxy.WsHeaders.Host = host
-	proxy.WsOpts.Path = v.Path
-	proxy.WsOpts.Headers = make(map[string]string, 1)
-	proxy.WsOpts.Headers["Host"] = host
-	if v.Security != "" {
-		proxy.Tls = true
-		proxy.Sni = v.Sni
-	}
-	return proxy
-}
+	proxy.SkipCertVerify = v.AllowInsecure
 
-// generate  Clash trojan
-func ClashTrojan(v model.Node, uuid, host string) model.ClashProxy {
-	var proxy model.ClashProxy
-	if v.EnableTransfer {
-		proxy.Server = v.TransferAddress
-		proxy.Port = strconv.FormatInt(v.TransferPort, 10)
-	} else {
-		proxy.Server = v.Address
-		proxy.Port = strconv.FormatInt(v.Port, 10)
-	}
-	proxy.Type = "trojan"
-	proxy.Password = uuid
-	proxy.Name = v.Remarks
-	proxy.Uuid = uuid
-	proxy.Alterid = strconv.FormatInt(v.Aid, 10)
-	proxy.Cipher = "auto"
-	proxy.Udp = true
-	proxy.Network = v.Network
-	proxy.WsPath = v.Path
-	proxy.WsHeaders.Host = host
-	proxy.WsOpts.Path = v.Path
-	proxy.WsOpts.Headers = make(map[string]string, 1)
-	proxy.WsOpts.Headers["Host"] = host
-	if v.Security != "" {
-		proxy.Tls = true
-		proxy.Sni = v.Sni
-	}
-	return proxy
-}
-
-// generate ShadowRocket vmess
-func ShadowRocketVmess(node model.Node, uuid, host string) string {
-	//nameStr:="chacha20-poly1305:"
-	var address, port string
-	if node.EnableTransfer {
-		address = node.TransferAddress
-		port = strconv.FormatInt(node.TransferPort, 10)
-	} else {
-		address = node.Address
-		port = strconv.FormatInt(node.Port, 10)
-	}
-	name := node.Scy + ":" + uuid + "@" + address + ":" + port
-	nameStr := base64.StdEncoding.EncodeToString([]byte(name))
-	netType := "websocket"
-	switch node.Network {
+	switch proxy.Network {
 	case "ws":
-		netType = "websocket"
+		proxy.WsOpts.Path = v.Path
+		proxy.WsOpts.Headers = make(map[string]string, 1)
+		proxy.WsOpts.Headers["Host"] = host
+	case "grpc":
+		proxy.GrpcOpts.GrpcServiceName = "grpc"
+	case "tcp":
+	case "h2":
+		proxy.H2Opts.Path = v.Path
+		proxy.H2Opts.Host = append(proxy.H2Opts.Host, v.Host)
 	}
-	remarksStr := "?remarks=" + url.QueryEscape(node.Remarks) + "&obfsParam=" + host + "&path=" + node.Path + "&obfs=" + netType + "&alterId=" + strconv.FormatInt(node.Aid, 10)
-	return "vmess://" + nameStr + remarksStr
 
+	switch v.Security {
+	case "tls":
+		proxy.Tls = true
+		proxy.Servername = v.Sni
+		proxy.ClientFingerprint = v.Fingerprint
+		proxy.Alpn = append(proxy.Alpn, v.Alpn)
+
+	case "reality":
+		proxy.Tls = true
+		proxy.Servername = v.Sni
+		proxy.RealityOpts.PublicKey = v.PublicKey
+		proxy.RealityOpts.ShortID = v.ShortId
+		proxy.ClientFingerprint = v.Fingerprint
+		proxy.Alpn = append(proxy.Alpn, v.Alpn)
+
+	}
+
+	return proxy
 }

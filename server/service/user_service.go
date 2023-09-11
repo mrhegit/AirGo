@@ -2,8 +2,10 @@ package service
 
 import (
 	"AirGo/global"
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -214,6 +216,45 @@ func DeleteUser(u *model.User) error {
 // 重置用户密码
 func ResetUserPassword(u *model.User) error {
 	return global.DB.Model(&model.User{}).Where("user_name = ?", u.UserName).Updates(&u).Error
+}
+
+// 重置管理员密码
+func ResetAdminPassword() {
+	//判断是否连接数据库
+	if global.DB == nil {
+		fmt.Println("未连接数据库，退出...")
+		return
+	}
+	var name, psw, msg string
+	fmt.Println("【重置管理员账户密码】\n请输入管理员邮箱(长度4～40)：")
+	if _, err := fmt.Scanln(&name); err != nil {
+		fmt.Println("输入出错了，已退出", err.Error())
+		return
+	}
+	fmt.Println("请输入管理员密码(长度4～20)：")
+	if _, err := fmt.Scanln(&psw); err != nil {
+		fmt.Println("输入出错了，已退出", err.Error())
+		return
+	}
+	fmt.Printf("账户：%s，密码：%s，是否重置？\n输入y重置，输入n退出\n", name, psw)
+	if _, err := fmt.Scanln(&msg); err != nil {
+		fmt.Println("输入出错了，已退出", err.Error())
+		return
+	}
+	switch msg {
+	case "y":
+		fmt.Println("正在重置管理员账户密码...")
+		var user model.User
+		global.DB.First(&user)
+		user.UserName = name
+		user.Password = encrypt_plugin.BcryptEncode(psw)
+		SaveUser(&user)
+		fmt.Println("完成...")
+
+	case "n":
+		os.Exit(0)
+	}
+
 }
 
 // 处理推荐人返利

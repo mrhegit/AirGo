@@ -3,14 +3,15 @@ package service
 import (
 	"AirGo/global"
 	"AirGo/model"
+	"AirGo/utils/other_plugin"
 	"errors"
 	"fmt"
 	"strings"
 )
 
 // 获取数据库的所有数据库名
-func GetDB() (model.DbInfo, error) {
-	var entities model.DbInfo
+func GetDB() (model.DbInfoReq, error) {
+	var entities model.DbInfoReq
 	if global.Config.SystemParams.DbType == "sqlite" {
 		entities.DbType = "sqlite"
 		entities.DatabaseList = append(entities.DatabaseList, global.Config.Sqlite.Path)
@@ -50,8 +51,8 @@ func GetTables(dbName string) ([]interface{}, error) {
 	return nil, errors.New("未知数据库")
 }
 
-// 获取指定数据库和指定数据表的所有字段名,类型值等
-func GetColumn(dbName, tableName string) (data []interface{}, err error) {
+// 获取指定数据库指定数据表的所有字段名,类型值等
+func GetColumnByDB(dbName, tableName string) (data []interface{}, err error) {
 	if global.Config.SystemParams.DbType == "mysql" {
 		var entities []model.DbMysqlColumn
 		var sql string
@@ -89,9 +90,22 @@ func GetColumn(dbName, tableName string) (data []interface{}, err error) {
 		return res, err
 	}
 }
+func GetColumnByReflect(tableName string) ([]string, map[string]interface{}, map[string]interface{}) {
+	var table interface{}
+	switch tableName {
+	case "user":
+		table = model.User{}
+	case "orders":
+		table = model.Orders{}
+	default:
+		return nil, nil, nil //默认只处理user，orders两个表
+	}
+	return other_plugin.GetStructFieldMap(table)
+
+}
 
 // 获取报表
-func GetReport(fieldParams model.FieldParams) ([]interface{}, int64, error) {
+func GetReport(fieldParams model.FieldParamsReq) ([]interface{}, int64, error) {
 	var sqlArr []string
 	for _, v := range fieldParams.FieldParamsList {
 		if v.Field == "" || v.Condition == "" || v.ConditionValue == "" {

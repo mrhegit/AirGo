@@ -1,21 +1,17 @@
 package model
 
-type DbName struct {
-	Database string `json:"database"`
-}
-
-type DbNameAndTable struct {
+type DbNameAndTableReq struct {
 	Database  string `json:"database" gorm:"column:database"`
 	TableName string `json:"table_name" gorm:"column:table_name"`
 }
 
-type DbInfo struct {
+type DbInfoReq struct {
 	DbType       string   `json:"db_type"`
 	DatabaseList []string `json:"database_list"`
 }
 
 // 查询参数 请求
-type FieldParams struct {
+type FieldParamsReq struct {
 	TableName        string            `json:"table_name" binding:"required,max=20,min=4"`
 	FieldParamsList  []FieldParamsItem `json:"field_params_list"`
 	PaginationParams PaginationParams  `json:"pagination_params"` //分页参数

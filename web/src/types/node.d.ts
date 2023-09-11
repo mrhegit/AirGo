@@ -34,12 +34,15 @@ declare interface NodeInfo {
     created_at: string;
     updated_at: string;
     id: number;
-
+    //sspanel 参数
     node_speedlimit: number; //节点限速/Mbps
     traffic_rate: number;    //倍率
-    sort: number;            //类型 vless(15) vmess(11) trojan(14)
+    node_type: string;       //类型 vless vmess trojan
     server: string;
     // type: string;//显示与隐藏
+
+    //共享节点额外需要的参数
+    uuid: string;
     //基础参数
     remarks: string;//别名
     address: string;
@@ -50,7 +53,7 @@ declare interface NodeInfo {
     enable_transfer: boolean;//是否启用中转
     transfer_address: string;//中转ip
     transfer_port: number;   //中转port
-    //
+    //流量
     total_up: number;
     total_down: number;
 

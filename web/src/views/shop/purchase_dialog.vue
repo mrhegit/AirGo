@@ -2,24 +2,18 @@
   <div>
     <!-- 支付弹窗 -->
     <el-dialog v-model="state.isShowPurchaseDialog" title="等待支付" width="30%">
-
       <div class="home-card-item">
-        <el-card>
           <div class="card-text">
-            <el-button type="primary" plain>套餐：</el-button>
+            <el-button type="primary" >套餐</el-button>
             <el-text class="card-text-right">{{ shopData.currentOrder.subject }}</el-text>
           </div>
           <div class="card-text">
-            <el-button type="primary" plain>金额：</el-button>
+            <el-button type="primary" >金额</el-button>
             <el-text class="card-text-right">{{ shopData.currentOrder.total_amount }}元</el-text>
           </div>
-        </el-card>
-      </div>
-
-      <div class="home-card-item">
-        <el-card>
+          <el-divider></el-divider>
           <div v-if="shopData.currentOrder.total_amount!=='0'">
-            <el-button type="primary" plain>支付方式</el-button>
+            <el-button type="primary" >支付方式</el-button>
             <div>
               <el-radio-group style="height: 60px;" v-model="shopData.currentOrder.pay_type" class="ml-4">
                 <el-radio :label="'alipay'">
@@ -37,7 +31,7 @@
               </el-radio-group>
             </div>
           </div>
-        </el-card>
+
       </div>
       <template #footer>
             <span class="dialog-footer">
@@ -126,6 +120,7 @@ defineExpose({
 
 .card-text {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   height: 35px
 }

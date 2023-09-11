@@ -201,7 +201,7 @@ func InitRouter() {
 	{
 		reportRouter.GET("getDB", api.GetDB)
 		reportRouter.POST("getTables", api.GetTables)
-		reportRouter.POST("getColumn", api.GetColumn)
+		reportRouter.POST("getColumn", api.GetColumnNew)
 		reportRouter.POST("reportSubmit", api.ReportSubmit)
 
 	}

@@ -12,73 +12,49 @@ export const useReportStore = defineStore("reportStore", {
             db_type: '',
             database_list: [],
         },
-        mysqlTable: [] as MysqlTable[],
-        mysqlColumn: [] as MysqlColumn[],
-        mysqlColumnTypeMap: new Map(),
-        mysqlColumnChineseNameMap: new Map(),
+        //选中的数据库，库表，用来请求获取数据库的数据表的所有字段名,类型值 请求参数
+        checkedDbInfo: {
+            database: '',
+            table_name: '',
+        },
+        //高级查询的条件参数
+        reportTable: {
+            table_name: '',
+            field_params_list: [] as FieldTable[],    //搜索条件列表 {field: '', field_chinese_name: '', field_type: '', condition: '=', condition_value: '',}
+            pagination_params: {},//分页参数
 
-        sqliteTable: [] as SqliteTable[],
-        sqliteColumn: [] as SqliteColumn[],
-        sqliteColumnTypeMap: new Map(),
+        },
+
+        //字段信息
+        fieldData:{
+            field_list:[],
+            field_chinese_name_list:{} as {[key:string]: any;},
+            field_type_list:{} as {[key:string]: any;},
+        },
 
     }),
     actions: {
+        // 获取数据库的所有数据库名
         async getDB(params?: object) {
             const res = await reportApi.getDBApi()
             if (res.code === 0) {
                 this.dbInfo = res.data
             }
         },
-        //加载库表，参数：{"database":"xxxx}
+        // 获取数据库的所有表名，参数：{"database":"xxxx}
         async getTables(params?: object) {
             const res = await reportApi.getTablesApi(params)
-            if (res.code === 0) {
-                // ElMessage.success(res.msg)
-                switch (this.dbInfo.db_type) {
-                    case "mysql":
-                        this.mysqlTable = res.data
-                        break
-                    case "sqlite":
-                        this.sqliteTable = res.data
-                        break
-                }
-            }
+
         },
-        //加载字段，参数：{"database":"xxxx","table_name":"xxx}
+        // 获取字段名,类型值
+        // 参数：{"table_name":"xxx}
         async getColumn(params?: object) {
             const res = await reportApi.getColumnApi(params)
-            if (res.code === 0) {
-                // ElMessage.success(res.msg)
-                switch (this.dbInfo.db_type) {
-                    case "mysql":
-                        this.mysqlColumn = res.data
-                        this.mysqlColumnTypeMapHandler()
-                        break
-                    case "sqlite":
-                        this.sqliteColumn = res.data
-                        this.sqliteColumnTypeMapHandler()
-                        break
-                }
-            }
+            this.fieldData=res.data
+
+
         },
-        //处理字段类型
-        sqliteColumnTypeMapHandler() {
-            const colMap = new Map()
-            this.sqliteColumn.forEach((value, index, array) => {
-                colMap.set(value.name, value.type)
-            })
-            this.sqliteColumnTypeMap = colMap
-        },
-        mysqlColumnTypeMapHandler() {
-            const colMap = new Map()
-            const colChineseNameMap = new Map()
-            this.mysqlColumn.forEach((value, index, array) => {
-                colMap.set(value.column_name, value.data_type)
-                colChineseNameMap.set(value.column_name, value.column_comment)
-            })
-            this.mysqlColumnTypeMap = colMap
-            this.mysqlColumnChineseNameMap = colChineseNameMap
-        }
+
     }
 
 })
