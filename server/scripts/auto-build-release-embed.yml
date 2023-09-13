@@ -8,24 +8,33 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - goarch: amd64
-            goos: linux
-          - goarch: arm
-            goos: linux
-          - goarch: amd64
-            goos: darwin
-          - goarch: arm64
-            goos: darwin
-          - goarch: amd64
-            goos: windows
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64, arm, 386]
+        exclude:
           - goarch: 386
+            goos: linux
+          - goarch: 386
+            goos: darwin
+          - goarch: arm
+            goos: darwin
+          - goarch: arm
             goos: windows
-#        goos: [linux, windows, darwin]
-#        goarch: [amd64, arm64, arm]
-#        exclude: #
+          - goarch: arm64
+            goos: windows
+
+#        include:
+#          - goarch: amd64
+#            goos: linux
 #          - goarch: arm
+#            goos: linux
+#          - goarch: amd64
 #            goos: darwin
+#          - goarch: arm64
+#            goos: darwin
+#          - goarch: amd64
+#            goos: windows
+#          - goarch: 386
+#            goos: windows
         node-version: [18.16.0]
     steps:
       - uses: actions/checkout@v3
