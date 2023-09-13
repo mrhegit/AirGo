@@ -5,54 +5,28 @@ import (
 	"AirGo/global"
 	"AirGo/middleware"
 	"context"
-	"embed"
-	"io/fs"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
-	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/static"
 )
 
-type Resource struct {
-	fs   embed.FS
-	path string
-}
-
-func NewResource() *Resource {
-	return &Resource{
-		fs:   f,
-		path: "web",
-	}
-}
-
-func (r *Resource) Open(name string) (fs.File, error) {
-	//if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
-	//	return nil, errors.New("http: invalid character in file path")
-	//}
-	fullName := filepath.Join(r.path, filepath.FromSlash(path.Clean("/"+name)))
-	file, err := r.fs.Open(fullName)
-	return file, err
-}
-
-//go:embed all:web/*
-var f embed.FS
+const apiPrefix = "/api"
 
 // 初始化总路由
 func InitRouter() {
 	// 正式发布模式
 	gin.SetMode(gin.ReleaseMode) //ReleaseMode TestMode DebugMode
 	Router := gin.Default()
-
-	Router.StaticFS("/web", http.FS(NewResource()))      //静态资源
-	Router.Use(middleware.Cors(), middleware.Recovery()) //不开启跨域验证码出错
-	RouterGroup := Router.Group("/")
+	Router.Use(static.Serve("/", static.LocalFile("./web", true))) //静态资源，项目目录下web文件夹
+	Router.Use(middleware.Cors(), middleware.Recovery())           //不开启跨域验证码出错
+	RouterGroup := Router.Group(apiPrefix)
 	//public
-	publicRouter := RouterGroup.Group("public").Use(middleware.RateLimitIP())
+	publicRouter := RouterGroup.Group("/public").Use(middleware.RateLimitIP())
 	{
 		publicRouter.POST("getEmailCode", api.GetMailCode)         //获取验证码
 		publicRouter.GET("getBase64Captcha", api.GetBase64Captcha) //获取base64Captcha
@@ -60,21 +34,21 @@ func InitRouter() {
 	}
 
 	//user
-	userRouter := RouterGroup.Group("user").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	userRouter := RouterGroup.Group("/user").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		userRouter.POST("changeSubHost", api.ChangeSubHost)           //修改混淆
 		userRouter.GET("getUserInfo", api.GetUserInfo)                //获取自身信息
 		userRouter.POST("changeUserPassword", api.ChangeUserPassword) //修改密码
 		userRouter.GET("resetSub", api.ResetSub)                      //重置订阅
 	}
-	userAdminRouter := RouterGroup.Group("user").Use(middleware.ParseJwt(), middleware.Casbin())
+	userAdminRouter := RouterGroup.Group("/user").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		userAdminRouter.POST("getUserList", api.GetUserlist) //获取用户列表
 		userAdminRouter.POST("newUser", api.NewUser)         //新建用户
 		userAdminRouter.POST("updateUser", api.UpdateUser)   //修改用户
 		userAdminRouter.POST("deleteUser", api.DeleteUser)   //删除用户
 	}
-	userRouterNoVerify := RouterGroup.Group("user").Use(middleware.RateLimitIP())
+	userRouterNoVerify := RouterGroup.Group("/user").Use(middleware.RateLimitIP())
 	{
 		userRouterNoVerify.POST("register", api.Register)                   //用户注册
 		userRouterNoVerify.POST("login", api.Login)                         //用户登录
@@ -83,11 +57,11 @@ func InitRouter() {
 	}
 
 	//菜单
-	menuRouter := RouterGroup.Group("menu").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	menuRouter := RouterGroup.Group("/menu").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		menuRouter.GET("getRouteList", api.GetRouteList) //获取当前角色动态路由
 	}
-	menuAdminRouter := RouterGroup.Group("menu").Use(middleware.ParseJwt(), middleware.Casbin())
+	menuAdminRouter := RouterGroup.Group("/menu").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		menuAdminRouter.GET("getRouteTree", api.GetRouteTree)              //获取当前角色动态路由tree
 		menuAdminRouter.GET("getAllRouteList", api.GetAllRouteList)        //获取全部动态路由
@@ -99,7 +73,7 @@ func InitRouter() {
 	}
 
 	//角色
-	roleAdminRouter := RouterGroup.Group("role").Use(middleware.ParseJwt(), middleware.Casbin())
+	roleAdminRouter := RouterGroup.Group("/role").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		roleAdminRouter.POST("getRoleList", api.GetRoleList)       //获取role list
 		roleAdminRouter.POST("modifyRoleInfo", api.ModifyRoleInfo) //更新role
@@ -108,20 +82,20 @@ func InitRouter() {
 	}
 
 	//系统设置
-	systemAdminRouter := RouterGroup.Group("system").Use(middleware.ParseJwt(), middleware.Casbin())
+	systemAdminRouter := RouterGroup.Group("/system").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		systemAdminRouter.POST("updateThemeConfig", api.UpdateThemeConfig) //设置主题
 		systemAdminRouter.GET("getSetting", api.GetSetting)                //获取系统设置
 		systemAdminRouter.POST("updateSetting", api.UpdateSetting)         //修改系统设置
 	}
-	systemRouter := RouterGroup.Group("system").Use(middleware.RateLimitIP())
+	systemRouter := RouterGroup.Group("/system").Use(middleware.RateLimitIP())
 	{
 		systemRouter.GET("getThemeConfig", api.GetThemeConfig)     //获取主题配置
 		systemRouter.GET("getPublicSetting", api.GetPublicSetting) //获取公共系统设置
 	}
 
 	//节点
-	nodeAdminRouter := RouterGroup.Group("node").Use(middleware.ParseJwt(), middleware.Casbin())
+	nodeAdminRouter := RouterGroup.Group("/node").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		nodeAdminRouter.GET("getAllNode", api.GetAllNode)      //查询全部节点
 		nodeAdminRouter.POST("newNode", api.NewNode)           //新建节点
@@ -137,7 +111,7 @@ func InitRouter() {
 	}
 
 	//sspqnel
-	sspanelRouter := RouterGroup.Group("mod_mu")
+	sspanelRouter := RouterGroup.Group("/mod_mu")
 	{
 		sspanelRouter.GET("nodes/:nodeID/info", api.SSNodeInfo) //获取节点信息
 		sspanelRouter.GET("users", api.SSUsers)                 //获取当前节点可连接的用户
@@ -146,12 +120,12 @@ func InitRouter() {
 	}
 
 	//商店
-	shopRouter := RouterGroup.Group("shop").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	shopRouter := RouterGroup.Group("/shop").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		shopRouter.POST("preCreatePay", api.PreCreateOrder) //alipay,统一收单线下交易预创建
 		shopRouter.POST("purchase", api.Purchase)           //支付
 	}
-	shopAdminRouter := RouterGroup.Group("shop").Use(middleware.ParseJwt(), middleware.Casbin())
+	shopAdminRouter := RouterGroup.Group("/shop").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		shopAdminRouter.GET("getAllEnabledGoods", api.GetAllEnabledGoods) // 查询全部已启用商品
 		shopAdminRouter.GET("getAllGoods", api.GetAllGoods)               //查询全部商品
@@ -165,19 +139,19 @@ func InitRouter() {
 		shopRouterNoVerify.POST("alipayNotify", api.AlipayNotify) //异步验证支付结果
 	}
 	//订单
-	orderRouter := RouterGroup.Group("order").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	orderRouter := RouterGroup.Group("/order").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		orderRouter.POST("getOrderInfo", api.GetOrderInfo)         //获取订单详情(下单时）
 		orderRouter.POST("getOrderByUserID", api.GetOrderByUserID) //获取订单，分页获取
 	}
-	orderAdminRouter := RouterGroup.Group("order").Use(middleware.ParseJwt(), middleware.Casbin())
+	orderAdminRouter := RouterGroup.Group("/order").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		orderAdminRouter.POST("getAllOrder", api.GetAllOrder)                         //获取全部订单，分页获取
 		orderAdminRouter.POST("completedOrder", api.CompletedOrder)                   //完成订单
 		orderAdminRouter.POST("getMonthOrderStatistics", api.GetMonthOrderStatistics) //获取时间范围内订单统计
 	}
 	//casbin
-	casbinAdminRouter := RouterGroup.Group("casbin").Use(middleware.ParseJwt(), middleware.Casbin())
+	casbinAdminRouter := RouterGroup.Group("/casbin").Use(middleware.ParseJwt(), middleware.Casbin())
 	{
 		casbinAdminRouter.GET("getAllPolicy", api.GetAllPolicy)                    //获取全部权限
 		casbinAdminRouter.POST("getPolicyByRoleIds", api.GetPolicyByRoleIds)       //获取用户权限ByRoleIds
@@ -185,19 +159,19 @@ func InitRouter() {
 		casbinAdminRouter.POST("updateCasbinPolicyNew", api.UpdateCasbinPolicyNew) //更新casbin权限
 	}
 	//websocket
-	websocketRouter := RouterGroup.Group("websocket").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	websocketRouter := RouterGroup.Group("/websocket").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		websocketRouter.GET("msg", api.WebSocketMsg)
 	}
 	//upload
 
-	uploadRouter := RouterGroup.Group("upload").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	uploadRouter := RouterGroup.Group("/upload").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		uploadRouter.GET("newPictureUrl", api.NewPictureUrl)
 		uploadRouter.POST("getPictureList", api.GetPictureList)
 	}
 	//报表
-	reportRouter := RouterGroup.Group("report").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	reportRouter := RouterGroup.Group("/report").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		reportRouter.GET("getDB", api.GetDB)
 		reportRouter.POST("getTables", api.GetTables)
@@ -206,7 +180,7 @@ func InitRouter() {
 
 	}
 	//文章
-	articleRouter := RouterGroup.Group("article").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	articleRouter := RouterGroup.Group("/article").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		articleRouter.POST("newArticle", api.NewArticle)
 		articleRouter.POST("deleteArticle", api.DeleteArticle)
@@ -214,7 +188,7 @@ func InitRouter() {
 		articleRouter.POST("getArticle", api.GetArticle)
 	}
 	//折扣
-	couponRouter := RouterGroup.Group("coupon").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	couponRouter := RouterGroup.Group("/coupon").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		couponRouter.POST("newCoupon", api.NewCoupon)
 		couponRouter.POST("deleteCoupon", api.DeleteCoupon)
@@ -222,7 +196,7 @@ func InitRouter() {
 		couponRouter.POST("getCoupon", api.GetCoupon)
 	}
 	//isp
-	ispRouter := RouterGroup.Group("isp").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
+	ispRouter := RouterGroup.Group("/isp").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
 		ispRouter.POST("sendCode", api.SendCode)
 		ispRouter.POST("ispLogin", api.ISPLogin)
@@ -230,7 +204,7 @@ func InitRouter() {
 		ispRouter.POST("getMonitorByUserID", api.GetMonitorByUserID)
 
 	}
-	ispRouterNoVerify := RouterGroup.Group("isp").Use(middleware.RateLimitIP())
+	ispRouterNoVerify := RouterGroup.Group("/isp").Use(middleware.RateLimitIP())
 	{
 		ispRouterNoVerify.GET("queryPackage", api.QueryPackage) //
 	}
@@ -252,7 +226,7 @@ func InitRouter() {
 	}()
 	go func() {
 		// 服务连接
-		if err := srvTls.ListenAndServeTLS("./air.crt", "./air.key"); err != nil && err != http.ErrServerClosed {
+		if err := srvTls.ListenAndServeTLS("./air.cer", "./air.key"); err != nil && err != http.ErrServerClosed {
 			global.Logrus.Error("tls listen: %s\n", err)
 		}
 	}()

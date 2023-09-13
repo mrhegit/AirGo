@@ -6,7 +6,6 @@ import (
 	"AirGo/service"
 	"AirGo/utils/other_plugin"
 	"AirGo/utils/response"
-	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,6 @@ import (
 // 获取角色动态路由
 func GetRouteList(ctx *gin.Context) {
 	uIdInt, _ := other_plugin.GetUserIDFromGinContext(ctx)
-	fmt.Println("uidInt:", uIdInt)
 	//查询uId对应的角色
 	roleIds, err := service.FindRoleIdsByuId(uIdInt)
 	if err != nil {

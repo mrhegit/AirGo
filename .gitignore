@@ -4,5 +4,6 @@ web/node_modules
 server/config_dev.yaml
 server/logs
 server/main
-*.db
-server/air.db
+server/web
+web/web
+
