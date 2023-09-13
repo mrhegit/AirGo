@@ -51,8 +51,8 @@ jobs:
           sed -i 's/old-version/${{ steps.get_version.outputs.VERSION }}/g' ./src/layout/footer/index.vue
           npm install
           npm run build
-          rm -rf ../server/web
-          mv web ../server/
+          rm -rf ../server/web/web
+          mv web ../server/web/
       - name: Build Go
         run: |
           cd server
