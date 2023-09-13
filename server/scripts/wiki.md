@@ -62,7 +62,7 @@
 使用debian，ununtu，centos系统，执行以下命令，根据提示安装
 
 ```
-https://
+bash <(curl -Ls https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts/install.sh)
 ```
 ### 2-1-2 配置文件
 

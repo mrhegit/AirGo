@@ -155,7 +155,9 @@ download(){
       echo -e "${red}下载失败，请重试${plain}"
       exit 1
   fi
-  unzip /usr/local/AirGo/AirGo.zip
+  echo -e "开始解压..."
+  cd /usr/local/AirGo/
+  unzip AirGo.zip
   chmod 777 -R /usr/local/AirGo
 
 }
@@ -179,11 +181,11 @@ EOF
 install(){
   #判断
   installation_status "AirGo"
-  if [[ $? -ne 0 ]]; then
-    echo -e "${red}AirGo未安装,脚本退出${plain}"
+  if [[ $? -eq 0 ]]; then
+    echo -e "${red}AirGo已安装,脚本退出${plain}"
     exit 1
   fi
-  Download
+  download
   add_service "AirGo"
   systemctl daemon-reload
   systemctl enable AirGo

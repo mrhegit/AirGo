@@ -4,6 +4,7 @@ import (
 	"AirGo/api"
 	"AirGo/global"
 	"AirGo/middleware"
+	"AirGo/web"
 	"context"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,35 +12,63 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
-
-	"github.com/gin-contrib/static"
 )
 
 const apiPrefix = "/api"
+
+//	type Resource struct {
+//		fs   embed.FS
+//		path string
+//	}
+//
+//	func NewResource() *Resource {
+//		return &Resource{
+//			fs:   f,
+//			path: "web",
+//		}
+//	}
+//
+//	func (r *Resource) Open(name string) (fs.File, error) {
+//		//if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
+//		//	return nil, errors.New("http: invalid character in file path")
+//		//}
+//		fullName := filepath.Join(r.path, filepath.FromSlash(path.Clean("/"+name)))
+//		file, err := r.fs.Open(fullName)
+//		return file, err
+//	}
+//
+// ////go:embed all:web/*
 
 // 初始化总路由
 func InitRouter() {
 	// 正式发布模式
 	gin.SetMode(gin.ReleaseMode) //ReleaseMode TestMode DebugMode
 	Router := gin.Default()
-	Router.Use(static.Serve("/", static.LocalFile("./web", true))) //静态资源，项目目录下web文件夹
-	Router.Use(middleware.Cors(), middleware.Recovery())           //不开启跨域验证码出错
+
+	//Router.Use(static.Serve("/", static.LocalFile("./web", true))) //静态资源(不嵌入)，可解决/问题。项目目录下web文件夹
+	//Router.Static("/static", "static") //静态资源(不嵌入)
+	//Router.StaticFS("/web", http.FS(NewResource())) //静态资源(嵌入)
+
+	Router.Use(middleware.Serve("/", middleware.EmbedFolder(web.Static, "web"))) // targetPtah=web 是embed和web文件夹的相对路径
+
+	Router.Use(middleware.Cors(), middleware.Recovery()) //不开启跨域验证码出错
+
 	RouterGroup := Router.Group(apiPrefix)
 	//public
 	publicRouter := RouterGroup.Group("/public").Use(middleware.RateLimitIP())
 	{
-		publicRouter.POST("getEmailCode", api.GetMailCode)         //获取验证码
-		publicRouter.GET("getBase64Captcha", api.GetBase64Captcha) //获取base64Captcha
+		publicRouter.POST("/getEmailCode", api.GetMailCode)         //获取验证码
+		publicRouter.GET("/getBase64Captcha", api.GetBase64Captcha) //获取base64Captcha
 
 	}
 
 	//user
 	userRouter := RouterGroup.Group("/user").Use(middleware.RateLimitIP(), middleware.ParseJwt(), middleware.Casbin(), middleware.RateLimitVisit())
 	{
-		userRouter.POST("changeSubHost", api.ChangeSubHost)           //修改混淆
-		userRouter.GET("getUserInfo", api.GetUserInfo)                //获取自身信息
-		userRouter.POST("changeUserPassword", api.ChangeUserPassword) //修改密码
-		userRouter.GET("resetSub", api.ResetSub)                      //重置订阅
+		userRouter.POST("/changeSubHost", api.ChangeSubHost)           //修改混淆
+		userRouter.GET("/getUserInfo", api.GetUserInfo)                //获取自身信息
+		userRouter.POST("/changeUserPassword", api.ChangeUserPassword) //修改密码
+		userRouter.GET("/resetSub", api.ResetSub)                      //重置订阅
 	}
 	userAdminRouter := RouterGroup.Group("/user").Use(middleware.ParseJwt(), middleware.Casbin())
 	{

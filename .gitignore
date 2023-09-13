@@ -1,9 +1,8 @@
 web/node_modules
 .DS_Store
 .idea/
-server/config_dev.yaml
+server/config_dev.yam/
 server/logs
 server/main
 server/web
 web/web
-

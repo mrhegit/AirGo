@@ -8,13 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux]
-        goarch: [amd64, arm64, arm]
-        exclude: #
+        include:
+          - goarch: amd64
+            goos: linux
+          - goarch: arm
+            goos: linux
+          - goarch: amd64
+            goos: darwin
           - goarch: arm64
             goos: darwin
-          - goarch: arm
-            goos: darwin
+          - goarch: amd64
+            goos: windows
+          - goarch: 386
+            goos: windows
+        #        goos: [linux, windows, darwin]
+        #        goarch: [amd64, arm64, arm]
+        #        exclude: #
+        #          - goarch: arm
+        #            goos: darwin
         node-version: [18.16.0]
     steps:
       - uses: actions/checkout@v3
@@ -31,9 +42,9 @@ jobs:
           sed -i 's/old-version/${{ steps.get_version.outputs.VERSION }}/g' ./src/layout/footer/index.vue
           npm install
           npm run build
-          rm -rf ../server/initialize/web
-          mv web ../server/initialize/
-      - name: Go build
+          rm -rf ../server/web
+          mv web ../server/
+      - name: Build Go
         run: |
           cd server
           sudo apt update -y
@@ -42,19 +53,27 @@ jobs:
           go env -w GOARCH=${{matrix.goarch}}
           case ${{matrix.goarch}} in
           arm64)
-            sudo apt install gcc-aarch64-linux-gnu -y
-            go env -w CC=aarch64-linux-gnu-gcc
+            if [[ ${{matrix.goos}} == 'darwin' ]] || [[ ${{matrix.goos}} == 'windows' ]]; then
+              sudo apt install -y build-essential gcc-multilib
+            else 
+              sudo apt install gcc-aarch64-linux-gnu -y
+              go env -w CC=aarch64-linux-gnu-gcc
+            fi
             ;;
           arm)
-            sudo apt-get install gcc-arm-linux-gnueabihf -y
-            go env -w CC=arm-linux-gnueabihf-gcc
+            if [[ ${{matrix.goos}} == 'darwin' ]] || [[ ${{matrix.goos}} == 'windows' ]]; then
+              sudo apt install -y build-essential gcc-multilib
+            else 
+             sudo apt-get install gcc-arm-linux-gnueabihf -y
+             go env -w CC=arm-linux-gnueabihf-gcc
+            fi
             ;;
           esac
-          go build -o airgo -ldflags='-s -w --extldflags "-static -fpic"' main.go
+          go build -o AirGo -ldflags='-s -w --extldflags "-static -fpic"' main.go
       - name: Package
         run: |
           cd server
-          zip  AirGo-${{ matrix.goos }}-${{ matrix.goarch }}-${{ steps.get_version.outputs.VERSION }}.zip airgo
+          zip  AirGo-${{ matrix.goos }}-${{ matrix.goarch }}-${{ steps.get_version.outputs.VERSION }}.zip AirGo config.yaml LICENSE
       - name: Upload to release
         uses: svenstaro/upload-release-action@v2
         if: github.event_name == 'release'
