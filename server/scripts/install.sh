@@ -21,6 +21,7 @@ ipv4=""
 #ipv6=""
 ipv4_local=""
 
+
 get_system_type(){
 if [ "$system" == "Darwin" ]; then
   system="daiwin-10.14"
@@ -64,16 +65,16 @@ open_ports(){
 
 set_dependences() {
     if [[ $(command -v yum) ]]; then
-      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]] ; then
+      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]] || [[ ! $(command -v lsof) ]]; then
           echo -e ${green}"安装依赖\n"${plain}
           yum update -y
-          yum install wget curl git socat unzip gawk -y
+          yum install wget curl git socat unzip gawk lsof -y
       fi
     elif [[ $(command -v apt) ]]; then
-      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]]; then
+      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]] || [[ ! $(command -v lsof) ]]; then
           echo -e ${green}"安装依赖\n"${plain}
           apt update -y
-          apt install wget curl git socat unzip gawk -y
+          apt install wget curl git socat unzip gawk lsof -y
       fi
        echo -e "依赖已安装\n"
     fi
@@ -91,7 +92,11 @@ initialize(){
   set_dependences
   get_region
   get_latest_version
-  ipv4_local=$( ip addr | awk '/^[0-9]+: / {}; /inet.*global.*eth/ {print gensub(/(.*)\/(.*)/, "\\1", "g", $2)}' || '你的内网ip')
+
+ ipv4=$(curl -4 -s --max-time 5 http://icanhazip.com/ || '你的ip' )
+ #ipv6=$(curl -6 -s --max-time 5 http://icanhazip.com/)
+ ipv4_local=$( ip addr | awk '/^[0-9]+: / {}; /inet.*global.*eth/ {print gensub(/(.*)\/(.*)/, "\\1", "g", $2)}' || '你的内网ip')
+
 }
 
 confirm_msg() {
@@ -180,26 +185,28 @@ EOF
 
 }
 install(){
-  #判断
-  installation_status "AirGo"
+  installation_status 'AirGo'
   if [[ $? -eq 0 ]]; then
-    echo -e "${red}AirGo已安装,脚本退出${plain}"
-    exit 1
+      echo -e "${red}AirGo已安装${plain}"
+      echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+      main
   fi
+
+  run_status "AirGo"
+  if [[ $? -eq 0 ]]; then
+   echo -e "${red}AirGo正在运行${plain}"
+   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+   main
+  fi
+
   download
   add_service "AirGo"
   systemctl daemon-reload
   systemctl enable AirGo
-  systemctl start AirGo
-
-  httpPort=$(read_yaml $yamlFile "http-port")
-#  httpsPort=$(read_yaml $yamlFile "https-port")
+#  systemctl start AirGo
 
   echo -e "${green}安装完成，版本：${latestVersion}${plain}"
-  echo -e "${green}公网访问：${ipv4}:${httpPort}${plain}"
-  echo -e "${green}内网访问：${ipv4_local}:${httpPort}${plain}"
-  echo -e "${green}内网访问：${ipv4_local}:${http-port}${plain}"
-  echo
+
   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
   main
 }
@@ -222,14 +229,54 @@ uninstall(){
 }
 
 start(){
+
+  installation_status 'AirGo'
+  if [[ $? -eq 1 ]]; then
+      echo -e "${red}AirGo未安装${plain}"
+      echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+      main
+  fi
+
+  run_status "AirGo"
+  if [[ $? -eq 0 ]]; then
+   echo -e "${red}AirGo正在运行${plain}"
+   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+   main
+  fi
+
+  httpPort=$(read_yaml $yamlFile "http-port")
+  name=$(lsof -i:$httpPort | awk '{print $1}')
+  if [[ ! $name == "AirGo" && ！$name == "" ]]; then
+    echo -e "${red}端口被占用，请检查端口，或者修改 /usr/local/AirGo/config.yaml 配置文件${plain}"
+    echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+    main
+  fi
+
   systemctl start AirGo
   systemctl is-active AirGo
+
   echo -e "${green}操作完成${plain}"
+  echo -e "${green}公网访问：${ipv4}:${httpPort}${plain}"
+  echo -e "${green}内网访问：${ipv4_local}:${httpPort}${plain}"
+  echo -e "${yellow}个别vps上述地址无法访问请更换端口${plain}"
   echo
   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
   main
 }
 stop(){
+    installation_status 'AirGo'
+    if [[ $? -eq 1 ]]; then
+        echo -e "${red}AirGo未安装${plain}"
+        echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+        main
+    fi
+
+    run_status "AirGo"
+    if [[ $? -eq 1 ]]; then
+     echo -e "${red}AirGo未运行${plain}"
+     echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+     main
+    fi
 
   systemctl stop AirGo
   systemctl is-active AirGo
@@ -240,6 +287,13 @@ stop(){
 }
 
 reset_admin(){
+  installation_status 'AirGo'
+  if [[ $? -eq 1 ]]; then
+      echo -e "${red}AirGo未安装${plain}"
+      echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+      main
+  fi
+
   cd /usr/local/AirGo/
   ./AirGo -resetAdmin
   echo -e "${green}完成${plain}"
@@ -248,6 +302,12 @@ reset_admin(){
 }
 
 acme(){
+  installation_status 'AirGo'
+  if [[ $? -eq 1 ]]; then
+      echo -e "${red}AirGo未安装${plain}"
+      echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+      main
+  fi
 
   installation_status "AirGo"
   if [[ $? -ne 0 ]]; then
@@ -285,9 +345,10 @@ acme(){
 
   echo -e "${yellow}如果存在该字段，请去你的域名 DNS 管理商，完成下面2个重要操作！！！${plain}"
   echo -e "${yellow}1、${plain}添加一个txt记录"
-  echo -e "${yellow}2、${plain}将该记录的 名称 设置为：${domainPrefix} "
+  echo -e "${yellow}2、${plain}将该记录的[名称]设置为：_acme-challenge.${domainPrefix}，完整域名为 _acme-challenge.${domain}"
+  echo
 
-  confirm_msg "是否已经添加这条 txt 记录？是否将该记录的 名称 设置为：${domainPrefix}？ "
+  confirm_msg "是否已经添加这条 txt 记录？是否将该记录的[名称]设置为：_acme-challenge.${domainPrefix}？ "
    if [[ $? -ne 0 ]]; then
      echo -e "${red}未添加txt 记录,脚本退出${plain}"
      exit 1
@@ -304,23 +365,26 @@ acme(){
   echo -e "${green}申请成功,证书文件在/root/.acme.sh/${domain}文件夹下${plain}"
   echo -e "${green}正在将证书复制到/usr/local/AirGo/${plain}"
 
-  cp /root/.acme.sh/${domain}/${domain}.cer /usr/local/AirGo/air.cer
-  cp /root/.acme.sh/${domain}/${domain}.key /usr/local/AirGo/air.key
+  cp /root/.acme.sh/${domain}*/${domain}.cer /usr/local/AirGo/air.cer
+  cp /root/.acme.sh/${domain}*/${domain}.key /usr/local/AirGo/air.key
 
-  echo -e "${green}完成${plain}"
+  systemctl stop AirGo
+  systemctl start AirGo
 
   httpPort=$(read_yaml $yamlFile "http-port")
   httpsPort=$(read_yaml $yamlFile "https-port")
 
+  echo -e "${green}操作完成，服务已重启${plain}"
   echo -e "${green}http公网访问：${ipv4}:${httpPort}${plain}"
   echo -e "${green}https公网访问：${ipv4}:${httpsPort}${plain}"
-  echo -e "${green}内网访问：${ipv4_local}:${http-port}${plain}"
-
+  echo -e "${green}内网访问：${ipv4_local}:${httpPort}${plain}"
+  echo
   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
   main
 
 }
 main(){
+  clear
   installationStatus='未安装'
   runStatus='未运行'
   installation_status 'AirGo'
@@ -346,20 +410,23 @@ main(){
   ${green}5.${plain} 重置管理员密码
   ${yellow}-------------------------${plain}
   ${green}6.${plain} 使用Acme脚本申请ssl证书
-  (dns手动模式，适合无80和443端口下申请域名证书)
+  (dns手动模式，无80和443端口也可申请证书)
+  ${yellow}-------------------------${plain}
+  ${green}7.${plain} 开放所有端口
   ${yellow}-------------------------${plain}
   ${green}0.${plain} 退出
  "
 
   echo && read -p "请输入序号: " tem
   case "${tem}" in
-  0) exit 0;;
   1) install;;
   2) uninstall "AirGo";;
   3) start;;
   4) stop;;
   5) reset_admin;;
   6) acme;;
+  7) open_ports;;
+  *) exit 0;;
 
   esac
 
