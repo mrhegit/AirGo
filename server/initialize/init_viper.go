@@ -13,10 +13,10 @@ func InitViper() *viper.Viper {
 	v.SetConfigType("yaml")        //设置文件的类型
 	err := v.ReadInConfig()
 	if err != nil {
-		global.Logrus.Panic("Fatal error config file:", err) //log之后会panic()
+		global.Logrus.Panic("Fatal error config file:", err)
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
-	v.WatchConfig() //监听
+	v.WatchConfig()
 
 	v.OnConfigChange(func(e fsnotify.Event) {
 		global.Logrus.Info("config file changed:", e.Name)

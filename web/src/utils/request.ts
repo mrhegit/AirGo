@@ -2,10 +2,16 @@ import axios, {AxiosInstance} from 'axios';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {Session, Local} from '/@/utils/storage';
 import qs from 'qs';
+let apiUrl = import.meta.env.VITE_API_URL
+
+if (apiUrl===''){
+    // console.log("apiUrl===''")
+    apiUrl= window.location.protocol+"//"+window.location.hostname+":"+window.location.port+"/api/"
+}
 
 // 配置新建一个 axios 实例
 const service: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: apiUrl,
     timeout: 30000,
     headers: {'Content-Type': 'application/json'},
     // headers: {"Content-Type": "application/x-www-form-urlencoded"},

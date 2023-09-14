@@ -1,16 +1,16 @@
 system:
   admin-email: admin@oicq.com
   admin-password: adminadmin
-  http-port: 8899
+  http-port: 80
   https-port: 443
   db-type: sqlite
 mysql:
-  address: mysql.sqlpub.com
+  address: mysql.sql.com
   port: 3306
   config: charset=utf8mb4&parseTime=True&loc=Local
   db-name: imdemo
   username: imdemo
-  password: 4cac6c1dbc54ff05
+  password: xxxxxx
   max-idle-conns: 10
   max-open-conns: 100
 sqlite:

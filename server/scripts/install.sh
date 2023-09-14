@@ -17,17 +17,24 @@ installScript="https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts/
 acmeGit="https://github.com/acmesh-official/acme.sh.git"
 yamlFile="/usr/local/AirGo/config.yaml"
 
-ipv4=$(curl -4 -s --max-time 5 http://icanhazip.com/ || '你的ip' )
-#ipv6=$(curl -6 -s --max-time 5 http://icanhazip.com/)
-ipv4_local=$( ip addr | awk '/^[0-9]+: / {}; /inet.*global.*eth/ {print gensub(/(.*)\/(.*)/, "\\1", "g", $2)}' || '你的内网ip')
+ipv4=""
+#ipv6=""
+ipv4_local=""
 
+get_system_type(){
+if [ "$system" == "Darwin" ]; then
+  system="daiwin-10.14"
+else
+  system="linux"
+fi
+}
 get_arch(){
   if [[ $arch == "x86_64" || $arch == "x64" ]]; then
       arch="amd64"
   elif [[ $arch == "aarch64" || $arch == "arm64" || $arch == "armv8" || $arch == "armv8l" ]]; then
       arch="arm64"
   elif [[ $arch == "arm"  || $arch == "armv7" || $arch == "armv7l" || $arch == "armv6" ]];then
-      arch="arm"
+      arch="arm-7"
   else
       echo -e ${red}"不支持的arch，请自行编译\n"${plain}
       exit 1
@@ -54,25 +61,19 @@ open_ports(){
 	iptables -F
 	iptables -X
 }
-set_system_type(){
-if [ "$system" == "Darwin" ]; then
-  system="daiwin"
-else
-  system="linux"
-fi
-}
+
 set_dependences() {
     if [[ $(command -v yum) ]]; then
-      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]]; then
+      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]] ; then
           echo -e ${green}"安装依赖\n"${plain}
           yum update -y
-          yum install wget curl git socat unzip -y
+          yum install wget curl git socat unzip gawk -y
       fi
     elif [[ $(command -v apt) ]]; then
-      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]]; then
+      if [[ ! $(command -v wget) ]] || [[ ! $(command -v curl) ]] || [[ ! $(command -v git) ]] || [[ ! $(command -v socat) ]] || [[ ! $(command -v unzip) ]] || [[ ! $(command -v gawk) ]]; then
           echo -e ${green}"安装依赖\n"${plain}
           apt update -y
-          apt install wget curl git socat unzip -y
+          apt install wget curl git socat unzip gawk -y
       fi
        echo -e "依赖已安装\n"
     fi
@@ -86,10 +87,11 @@ get_latest_version() {
 }
 initialize(){
   get_arch
-  set_system_type
+  get_system_type
   set_dependences
   get_region
   get_latest_version
+  ipv4_local=$( ip addr | awk '/^[0-9]+: / {}; /inet.*global.*eth/ {print gensub(/(.*)\/(.*)/, "\\1", "g", $2)}' || '你的内网ip')
 }
 
 confirm_msg() {
@@ -112,14 +114,12 @@ read_yaml(){
     cat $1 | while read LINE
     do
       if [ "$(echo $LINE | grep $2)" != "" ];then
-       return $( echo "$LINE" | awk -F ":" '{print $2}' )
+       #        echo -e "return：$(echo $LINE | grep $2)"
+         text=$( echo "$LINE" | awk -F ":" '{print $2}' )
+         eval echo $text
       fi
     done
 }
-get_yaml_params(){
-  read_yaml $yamlFile "port"
-}
-
 installation_status(){
       if [[ ! -f /etc/systemd/system/$1.service ]] || [[ ! -f /usr/local/$1/$1 ]]; then
         return 1
@@ -150,7 +150,7 @@ download(){
   wget -N --no-check-certificate -O /usr/bin/AirGo ${installScript}
   chmod 777 /usr/bin/AirGo
 
-  wget -N --no-check-certificate -O /usr/local/AirGo/AirGo.zip ${downloadPrefix}${latestVersion}/AirGo-linux-${arch}-${latestVersion}.zip
+  wget -N --no-check-certificate -O /usr/local/AirGo/AirGo.zip ${downloadPrefix}${latestVersion}/AirGo-${latestVersion}-${system}-${arch}.zip
   if [[ $? -ne 0 ]]; then
       echo -e "${red}下载失败，请重试${plain}"
       exit 1
@@ -159,6 +159,7 @@ download(){
   cd /usr/local/AirGo/
   unzip AirGo.zip
   chmod 777 -R /usr/local/AirGo
+  mv /usr/local/AirGo/AirGo-${latestVersion}-${system}-${arch} /usr/local/AirGo/AirGo
 
 }
 add_service(){
@@ -171,10 +172,10 @@ add_service(){
   [Service]
   Type=simple
   WorkingDirectory=/usr/local/$1/
-  ExecStart=/usr/local/$1/$1
+  ExecStart=/usr/local/$1/$1 -start
 
   [Install]
-  WantedBy=multi-user.target"
+  WantedBy=multi-user.target
 EOF
 
 }
@@ -191,20 +192,19 @@ install(){
   systemctl enable AirGo
   systemctl start AirGo
 
-  read_yaml $yamlFile "http-port"
-  http-port=$?
-#    read_yaml $yamlFile "https-port"
-#    http-ports=$?
+  httpPort=$(read_yaml $yamlFile "http-port")
+#  httpsPort=$(read_yaml $yamlFile "https-port")
 
   echo -e "${green}安装完成，版本：${latestVersion}${plain}"
-  echo -e "${green}公网访问：${ipv4}:${http-port}${plain}"
+  echo -e "${green}公网访问：${ipv4}:${httpPort}${plain}"
+  echo -e "${green}内网访问：${ipv4_local}:${httpPort}${plain}"
   echo -e "${green}内网访问：${ipv4_local}:${http-port}${plain}"
   echo
   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
   main
 }
 uninstall(){
-  confirm "确定要卸载吗?" "n"
+  confirm_msg "确定要卸载吗?" "n"
       if [[ $? != 0 ]]; then
           return 0
       fi
@@ -240,10 +240,11 @@ stop(){
 }
 
 reset_admin(){
-   /usr/local/AirGo/AirGo -resetAdmin
-   echo -e "${green}完成${plain}"
-   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
-   main
+  cd /usr/local/AirGo/
+  ./AirGo -resetAdmin
+  echo -e "${green}完成${plain}"
+  echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+  main
 }
 
 acme(){
@@ -286,7 +287,7 @@ acme(){
   echo -e "${yellow}1、${plain}添加一个txt记录"
   echo -e "${yellow}2、${plain}将该记录的 名称 设置为：${domainPrefix} "
 
-  ConfirmMsg "是否已经添加这条 txt 记录？是否将该记录的 名称 设置为：${domainPrefix}？ "
+  confirm_msg "是否已经添加这条 txt 记录？是否将该记录的 名称 设置为：${domainPrefix}？ "
    if [[ $? -ne 0 ]]; then
      echo -e "${red}未添加txt 记录,脚本退出${plain}"
      exit 1
@@ -307,13 +308,12 @@ acme(){
   cp /root/.acme.sh/${domain}/${domain}.key /usr/local/AirGo/air.key
 
   echo -e "${green}完成${plain}"
-  read_yaml $yamlFile "http-port"
-  http-port=$?
-  read_yaml $yamlFile "https-port"
-  http-ports=$?
 
-  echo -e "${green}http公网访问：${ipv4}:${http-port}${plain}"
-  echo -e "${green}https公网访问：${ipv4}:${https-port}${plain}"
+  httpPort=$(read_yaml $yamlFile "http-port")
+  httpsPort=$(read_yaml $yamlFile "https-port")
+
+  echo -e "${green}http公网访问：${ipv4}:${httpPort}${plain}"
+  echo -e "${green}https公网访问：${ipv4}:${httpsPort}${plain}"
   echo -e "${green}内网访问：${ipv4_local}:${http-port}${plain}"
 
   echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
@@ -339,13 +339,14 @@ main(){
   ${yellow}-------------------------${plain}
   ${green}1.${plain} 安装
   ${green}2.${plain} 卸载
-  -${yellow}-------------------------${plain}
+  -${yellow}------------------------${plain}
   ${green}3.${plain} 启动
   ${green}4.${plain} 停止
   ${yellow}-------------------------${plain}
   ${green}5.${plain} 重置管理员密码
   ${yellow}-------------------------${plain}
-  ${green}6.${plain} 使用Acme脚本申请ssl证书（dns手动模式，适合无80和443端口下申请域名证书）
+  ${green}6.${plain} 使用Acme脚本申请ssl证书
+  (dns手动模式，适合无80和443端口下申请域名证书)
   ${yellow}-------------------------${plain}
   ${green}0.${plain} 退出
  "
