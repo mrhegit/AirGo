@@ -51,6 +51,7 @@ jobs:
         run: |
           cd server
           sudo apt update -y
+#          go env -w GO111MODULE=on
           go env -w CGO_ENABLED=1
           go env -w GOOS=${{matrix.goos}} 
           go env -w GOARCH=${{matrix.goarch}}
