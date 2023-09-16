@@ -55,13 +55,14 @@ bash <(curl -Ls https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts
 
 ### 2-1-4 配置ssl
 
-使用debian，ununtu，centos系统，执行以下命令，根据提示申请证书
+- 使用debian，ununtu，centos系统，执行以下命令，根据提示申请证书
 
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts/install.sh)
 ```
 
-如果使用自定义ssl，只需在安装目录（/usr/local/AirGo/）下，配置 `air.cer`，`air.key`
+- 如果使用自定义ssl，只需在安装目录（/usr/local/AirGo/）下，配置 `air.cer`，`air.key`
+- 配置完ssl，需重启服务生效
 
 ### 2-1-5 前端部署到[Vercel](https://vercel.com)，实现前后分离
 
@@ -78,7 +79,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts
 
 ### 2-2-2 配置文件
 
-修改/usr/local/AirGo/config.yaml，根据自己的情况修改数据库、默认管理员等参数，并且将**http端口设置为非80端口**，**https设置为非443端口**，避免和宝塔面板端口冲突
+- 修改/usr/local/AirGo/config.yaml，根据自己的情况修改数据库、默认管理员等参数，并且将**http端口设置为非80端口**，**https设置为非443端口**，避免和宝塔面板端口冲突
 
 ### 2-2-3 启动
 同2-1-3
@@ -90,8 +91,92 @@ bash <(curl -Ls https://raw.githubusercontent.com/ppoonk/AirGo/v2/server/scripts
 ### 2-2-5 前端部署到[Vercel](https://vercel.com)，实现前后分离
 同2-1-5
 
-# 3 对接XrayR等后端
+## 2-4 Docker部署
+
+- 在合适的目录新建配置文件，例如：/$PWD/air/config.yaml，配置文件内容如下：
+
+```
+system:
+  admin-email: admin@oicq.com
+  admin-password: adminadmin
+  http-port: 80
+  https-port: 443
+  db-type: sqlite
+mysql:
+  address: mysql.sql.com
+  port: 3306
+  config: charset=utf8mb4&parseTime=True&loc=Local
+  db-name: imdemo
+  username: imdemo
+  password: xxxxxx
+  max-idle-conns: 10
+  max-open-conns: 100
+sqlite:
+  path: ./air.db
+
+```
+- 根据自己的需求，修改配置文件，启动docker命令参考如下：
+
+```
+docker run -tid \
+  -v $PWD/air/config.yaml:/air/config.yaml \
+  -p 80:80 \
+  -p 443:443 \
+  --name airgo \
+  --restart always \
+  --privileged=true \
+  ppoiuty/airgo:latest
+```
+
+
+
+## 2-5 手动安装
+linux,darwin 下载对应压缩包，解压后启动：`./AirGo -start`
+
+# 5 关于套餐监控
+>本人是个免流佬，这个功能纯粹是免流用的，可能大部分人用不到，可以跳过。免流一般用青龙面板或者1ts这个app监控流量，我参考部分开源项目，然后用安卓的KWGT这个组件app，写了个简单的流量监控组件。
+支持联通，电信手机号。
+## 5-1 功能简介
+<table>
+<tr>
+    <td> <img src="https://wiki.airgoo.link/assets/home.368f2b00.jpeg">
+</table>
+
+## 5-1 下载
+
+[KWGT下载](https://www.123pan.com/s/oIT9-qhyxH.html)
+
+[AirGo插件下载---<font color=red>更新时间：2023-08-31</font>](https://www.123pan.com/s/oIT9-QxyxH.html)
+
+
+## 5-2 安装
+
+- 安装KWGT，在桌面添加Kustom Widget，先选择4x4尺寸，在添加插件后可自行调整大小
+![kwgt1](https://wiki.airgoo.link/assets/kwgt1.efa3c135.jpg)
+- 注册登录机场。点击菜单栏-流量监控，登录自己的手机号，然后复制url
+- 打开KWGT，点击 `导入`，导入AirGo插件-`AirGo.kwgt`
+  ![kwgt1](https://wiki.airgoo.link/assets/kwgt2.8ecfb18e.jpg)
+- 点击-编辑
+  ![kwgt1](https://wiki.airgoo.link/assets/kwgt3.6465d5e9.jpg)
+
+- 点击-全局变量-url
+![kwgt1](https://wiki.airgoo.link/assets/kwgt4.a953bb41.jpg)
+
+- 在公式编辑器里粘贴上面复制的url，<font color=red>点击右上角对号保存！然后再点击右上角保存按钮再次保存！</font>
+![kwgt1](https://wiki.airgoo.link/assets/kwgt5.0ef0f989.jpg)
+
+- 然后回到桌面，点击一次手动刷新按钮，等待一会，看是否刷新出流量使用详情
+![kwgt1](https://wiki.airgoo.link/assets/kwgt6.7813848b.jpg)
+
+
+
+# 4 对接XrayR等后端
 本项目使用sspanel同名api，所以对接只需将面板类型设置为`sspanel`即可
 
-# 4 其他说明
+# 5 开发注意事项
+- 手动编译，脚本在`项目/server/scripts/install.sh`
+
+# 6 其他说明
+
+
 

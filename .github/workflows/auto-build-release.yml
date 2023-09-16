@@ -1,3 +1,14 @@
+#执行本action脚本，需要注意以下几点：
+#1、github右上角头像--->Settings--->Developer Settings--->Personal access token--->fine-grained tokens--->generate new token
+#注意，该密钥只显示一次，务必保存！！！！
+#修改密钥权限：1、Repository permissions 全部设为 非 No access（里边选项太多，懒得一一研究，索性全允许了）
+#           2、Account permissions 中 Codespaces user secrets设为 非 No access，可能你用 github Codespaces 编译时用到
+#2、项目-Settings--->Secrets and variables ---> Actions--->New repository secret,名称随意，但是要和脚本中【 repo_token: ${{ secrets.ACTION_TOKEN }} 】保持一致，密钥值填步骤1申请的值。
+#该密钥用来提交release。
+#3、项目-Settings--->Secrets and variables ---> Actions--->New repository secret，新建 DOCKERHUB_USERNAME，DOCKERHUB_TOKEN 两个令牌，名字可以自定义，但是要和下面的保持一致。
+#  DOCKERHUB_USERNAME=你的hub.docker.com用户名
+#  DOCKERHUB_TOKEN=你的hub.docker.com toekn，可在hub.docker.com toekn获得
+
 name: auto build release
 on:
   release:
@@ -41,31 +52,56 @@ jobs:
       - name: Package
         run: |
           cd server
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-amd64
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-amd64.zip AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-amd64 config.yaml LICENSE
-          
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-arm64
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-arm64.zip AirGo-${{ steps.get_version.outputs.VERSION }}-darwin-10.14-arm64 config.yaml LICENSE
-          
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-linux-amd64
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-amd64.zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-amd64 config.yaml LICENSE
-          
-          
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm64
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm64.zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm64 config.yaml LICENSE
-          
-          
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm-7
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm-7.zip AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm-7 config.yaml LICENSE
-          
-          # AirGo-${{ steps.get_version.outputs.VERSION }}-windows-8.1-amd64.exe
           zip AirGo-${{ steps.get_version.outputs.VERSION }}-windows-8.1-amd64.zip AirGo-${{ steps.get_version.outputs.VERSION }}-windows-8.1-amd64.exe config.yaml LICENSE
 
       - name: Upload to release
         uses: svenstaro/upload-release-action@v2
         if: github.event_name == 'release'
         with:
-          repo_token: ${{ secrets.Action_Token }}
+          repo_token: ${{ secrets.ACTION_TOKEN }}
           file: server/AirGo-${{ steps.get_version.outputs.VERSION }}*.zip
           tag: ${{ github.ref }}
           file_glob: true
+
+      - name: Get Docker files
+        run: |
+          cd server
+          mv AirGo-${{ steps.get_version.outputs.VERSION }}-linux-amd64 AirGo-linux-amd64
+          mv AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm64 AirGo-linux-arm64
+          mv AirGo-${{ steps.get_version.outputs.VERSION }}-linux-arm-7 AirGo-linux-arm
+
+      - name: Get Docker info
+        id: info
+        run: |
+          TAG=$(echo $GITHUB_REF | cut -d / -f 3)
+          IMAGE="ppoiuty/airgo"
+          echo image=${IMAGE} >> $GITHUB_OUTPUT
+          echo tag=${TAG} >> $GITHUB_OUTPUT
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build production image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: server/scripts/Dockerfile
+          platforms: linux/arm,linux/arm64,linux/amd64
+          push: true
+          tags: |
+            ${{ steps.info.outputs.image }}:${{ steps.info.outputs.tag }}
+            ${{ steps.info.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
