@@ -18,4 +18,4 @@
 
 <hr/>
 
-使用文档请访问 [wiki](https://github.com/ppoonk/AirGo/wiki)
+使用文档请访问 [wiki](https://github.com/ppoonk/AirGo/wiki/AirGo-Wiki)
