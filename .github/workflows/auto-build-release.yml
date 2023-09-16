@@ -98,6 +98,6 @@ jobs:
           push: true
           tags: |
             ${{ steps.get_version.outputs.IMAGE }}:${{ steps.get_version.outputs.VERSION }}
-            ${{ steps.info.outputs.IMAGE }}:latest
+            ${{ steps.get_version.outputs.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
