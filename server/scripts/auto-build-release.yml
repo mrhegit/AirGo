@@ -55,7 +55,7 @@ jobs:
           go env -w CC=arm-linux-gnueabihf-gcc
           go env -w GOARCH=arm
           go build -o AirGo-linux-arm -ldflags='-s -w --extldflags "-static -fpic"' main.go
-
+          
 
       - name: Package
         run: |

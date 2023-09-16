@@ -76,9 +76,6 @@
         </el-button>
       </el-col>
     </el-form-item>
-    <div>
-      <el-text size="default" type="info" style="font-style: italic;">{{ state.oneWord }}</el-text>
-    </div>
   </el-form>
 </template>
 
@@ -121,7 +118,6 @@ const state = reactive({
   loading: {
     signIn: false,
   },
-  oneWord: '',
 });
 
 // 时间获取
@@ -206,15 +202,7 @@ const handleTimeChange = () => {
     }, 1000);
   }
 };
-//one word
-const oneWord = () => {
-  service({
-    url: 'https://api.xygeng.cn/one/get/',
-  }).then((res: any) => {
-    const r: string = res
-    state.oneWord = r.slice(15, r.length - 1)
-  })
-}
+
 //表单验证
 const ruleFormRef = ref<FormInstance>()
 const loginRules = reactive<FormRules<RegisterForm>>({
@@ -240,9 +228,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   })
 }
 
-onMounted(() => {
-  oneWord()
-});
 
 </script>
 

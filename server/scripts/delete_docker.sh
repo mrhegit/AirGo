@@ -20,4 +20,4 @@ docker run -ti \
   -p 20443:443 \
   --name airgo \
   --privileged=true \
-  demo:latest
+  airgo:latest

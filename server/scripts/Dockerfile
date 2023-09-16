@@ -10,10 +10,12 @@ WORKDIR /air
 
 VOLUME ["/air/config.yaml"]
 
-COPY ../AirGo-$TARGETOS-$TARGETARCH /air/AirGo
+COPY server/AirGo-$TARGETOS-$TARGETARCH /air/
 
 ENV LANG C.UTF-8
 
 EXPOSE 80 443
 
 CMD ["/air/AirGo", "-start"]
+
+# docker buildx build --platform linux/arm,linux/arm64,linux/amd64 -f server/scripts/Dockerfile -t airgo .

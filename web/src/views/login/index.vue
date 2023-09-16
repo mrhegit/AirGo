@@ -163,7 +163,7 @@ onMounted(() => {
       border: 1px solid var(--el-color-primary-light-3); //表单边框
       border-radius: 3px;
       width: 100%;
-      height: 500px; //表单高度
+      //height: 500px; //表单高度
       position: relative;
       overflow: hidden;
       background-color: var(--el-color-white);

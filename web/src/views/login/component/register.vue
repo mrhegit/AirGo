@@ -176,11 +176,11 @@ const registerRules = reactive<FormRules<RegisterForm>>({
   ],
   password: [
     {required: true, message: '请输入密码', trigger: 'blur'},
-    {min: 8, max: 20, message: '密码长度8～20', trigger: 'blur'},
+    {min: 4, max: 20, message: '密码长度4～20', trigger: 'blur'},
   ],
   re_password: [
     {required: true, message: '请输入密码', trigger: 'blur'},
-    {min: 8, max: 20, message: '密码长度8～20', trigger: 'blur'},
+    {min: 4, max: 20, message: '密码长度4～20', trigger: 'blur'},
   ],
 })
 // 提交表单，验证表单
