@@ -16,7 +16,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// 注册
+// 注册,角色对应如下
+// {ID: 1, RoleName: "admin", Description: "超级管理员"},
+// {ID: 2, RoleName: "客服", Description: "客服"},
+// {ID: 3, RoleName: "合作伙伴", Description: "合作伙伴"},
+// {ID: 4, RoleName: "普通用户", Description: "普通用户"},
 func Register(u *model.User) error {
 	//判断是否存在
 	var user model.User
@@ -29,7 +33,7 @@ func Register(u *model.User) error {
 			UserName:       u.UserName,
 			NickName:       u.UserName,
 			Password:       encrypt_plugin.BcryptEncode(u.Password),
-			RoleGroup:      []model.Role{{ID: 2}}, //默认角色
+			RoleGroup:      []model.Role{{ID: 4}}, //默认角色
 			InvitationCode: encrypt_plugin.RandomString(8),
 			ReferrerCode:   u.ReferrerCode,
 		}
@@ -37,6 +41,32 @@ func Register(u *model.User) error {
 	} else {
 		return err
 	}
+}
+
+// 新建用户
+func NewUser(u model.User) error {
+	//判断是否存在
+	var user model.User
+	err := global.DB.Where(&model.User{UserName: u.UserName}).First(&user).Error
+	if err == nil {
+		return errors.New("用户已存在")
+	} else {
+		//处理角色
+		var roleArr []string
+		for _, v := range u.RoleGroup {
+			roleArr = append(roleArr, v.RoleName)
+		}
+		roles, err := FindRoleIdsByRoleNameArr(roleArr)
+		if err != nil {
+			return err
+		}
+		u.RoleGroup = roles
+		u.UUID = uuid.NewV4()
+		u.Password = encrypt_plugin.BcryptEncode(u.Password)
+		u.InvitationCode = encrypt_plugin.RandomString(8)
+		return CreateUser(NewUserSubscribe(&u))
+	}
+
 }
 
 // 新注册用户分配套餐
@@ -126,7 +156,6 @@ func HandleUserSubscribe(u *model.User, goods *model.Goods) *model.User {
 	if u.SubscribeInfo.SubscribeUrl == "" {
 		u.SubscribeInfo.SubscribeUrl = encrypt_plugin.RandomString(8) //随机字符串订阅url
 	}
-
 	u.SubscribeInfo.GoodsID = goods.ID //当前订购的套餐
 	u.SubscribeInfo.SubStatus = true   //订阅状态
 	t := time.Now().AddDate(0, 0, int(goods.ExpirationDate))

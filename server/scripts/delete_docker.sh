@@ -7,8 +7,8 @@ docker rmi $imageName
 
 docker run -ti \
   -v /$PWD/air/config.yaml:/air/config.yaml \
-  -p 20080:80 \
-  -p 20443:443 \
+  -p 10081:80 \
+  -p 10082:443 \
   --name airgo \
   --privileged=true \
   ppoiuty/airgo:latest
@@ -16,8 +16,7 @@ docker run -ti \
 
 docker run -ti \
   -v /$PWD/air/config.yaml:/air/config.yaml \
-  -p 20080:80 \
-  -p 20443:443 \
+  -p 10010:80 \
   --name airgo \
   --privileged=true \
   airgo:latest

@@ -54,7 +54,7 @@ service.interceptors.response.use(
         console.log("响应数据：", res);
         if (res.code && res.code !== 0) {
             // `token` 过期或者账号已在别处登录
-             if (res.code === 1) {
+             if (res.code === 401) {
                 // Session.clear(); // 清除浏览器全部临时缓存
                 Local.clear()
                 window.location.href = '/'; // 去登录页

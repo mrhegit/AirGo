@@ -6,6 +6,8 @@ import (
 	utils "AirGo/utils/encrypt_plugin"
 	"errors"
 	"gorm.io/driver/sqlite"
+	"time"
+
 	//"go-admin/initialize"
 	//github.com/satori/go.uuid
 	gormadapter "github.com/casbin/gorm-adapter/v3"
@@ -116,6 +118,7 @@ func RegisterTables() {
 func InsertInto(db *gorm.DB) error {
 	uuid1 := uuid.NewV4()
 	uuid2 := uuid.NewV4()
+	expiedTime := time.Date(2099, 9, 9, 9, 9, 9, 0, time.Local)
 	sysUserData := []model.User{
 		{
 			UUID:           uuid1,
@@ -123,13 +126,25 @@ func InsertInto(db *gorm.DB) error {
 			Password:       utils.BcryptEncode(global.Config.SystemParams.AdminPassword),
 			NickName:       "admin",
 			InvitationCode: utils.RandomString(8),
+			SubscribeInfo: model.SubscribeInfo{
+				GoodsID:      1,
+				SubscribeUrl: utils.RandomString(8), //随机字符串订阅url
+				SubStatus:    true,
+				ExpiredAt:    &expiedTime,
+			},
 		},
 		{
 			UUID:           uuid2,
-			UserName:       "测试1@oicq.com",
+			UserName:       "123@oicq.com",
 			Password:       utils.BcryptEncode("123456"),
-			NickName:       "测试1",
+			NickName:       "测试123",
 			InvitationCode: utils.RandomString(8),
+			SubscribeInfo: model.SubscribeInfo{
+				GoodsID:      1,
+				SubscribeUrl: utils.RandomString(8), //随机字符串订阅url
+				SubStatus:    true,
+				ExpiredAt:    &expiedTime,
+			},
 		},
 	}
 	if err := db.Create(&sysUserData).Error; err != nil {

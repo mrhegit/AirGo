@@ -11,7 +11,7 @@
           </el-col>
           <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12" class="mb20">
             <el-form-item label="账户密码">
-              <el-input v-model="userManageData.dialog.user.password" placeholder="请输入" type="password"
+              <el-input v-model="userManageData.dialog.user.password" placeholder="请输入"
                         clearable></el-input>
             </el-form-item>
           </el-col>
@@ -37,11 +37,11 @@
             </el-form-item>
           </el-col>
 
-          <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12" class="mb20">
-            <el-form-item label="订阅url">
-              <el-input v-model="userManageData.dialog.user.subscribe_info.subscribe_url"></el-input>
-            </el-form-item>
-          </el-col>
+<!--          <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12" class="mb20">-->
+<!--            <el-form-item label="订阅url">-->
+<!--              <el-input v-model="userManageData.dialog.user.subscribe_info.subscribe_url"></el-input>-->
+<!--            </el-form-item>-->
+<!--          </el-col>-->
 
           <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12" class="mb20">
             <el-form-item label="分配套餐">
@@ -170,6 +170,7 @@ const roleStore = useRoleStore()
 const {roleManageData} = storeToRefs(roleStore)
 //shop store
 import {useShopStore} from "/@/stores/shopStore";
+import {formatDate, GetLocalTime} from "/@/utils/formatTime";
 
 const shopStore = useShopStore()
 const {goodsList} = storeToRefs(shopStore)
@@ -199,10 +200,8 @@ const openDialog = (type: string, row: SysUser) => {
   } else {
     state.title = '新增用户';
     state.submitTxt = '新 增';
-    // 清空表单，此项需加表单验证才能使用
-    // nextTick(() => {
-    // 	userDialogFormRef.value.resetFields();
-    // });
+    userStore.resetData();
+    (userManageData.value.dialog.user.subscribe_info.expired_at as Date) = GetLocalTime(8)
   }
 //打开时加载全部角色，用来设置用户角色
   roleStore.getRoleList({page_num: 1, page_size: 10000})
@@ -213,17 +212,26 @@ const closeDialog = () => {
 };
 // 提交
 const onSubmit = () => {
+  //处理角色
+  userManageData.value.dialog.user.role_group=[];
+  userManageData.value.dialog.check_list.forEach((value: string, index: number, array: string[])=>{
+    userManageData.value.dialog.user.role_group.push({
+      role_name:value,
+    } as RowRoleType)
+  })
+  //处理流量
+  if (state.subParams.t !== 0) {     //计算流量
+    userManageData.value.dialog.user.subscribe_info.t = state.subParams.t * 1024 * 1024 * 1024
+  }
   if (state.title === '新增用户') {
-    userStore.newUser(userManageData.value.dialog)
+
+    userStore.newUser(userManageData.value.dialog.user)
   } else {
-    if (state.subParams.t !== 0) {     //计算流量
-      userManageData.value.dialog.user.subscribe_info.t = state.subParams.t * 1024 * 1024 * 1024
-    }
-    userStore.updateUser(userManageData.value.dialog)
+    userStore.updateUser(userManageData.value.dialog.user)
   }
   setTimeout(() => {
     userStore.getUserList(state.params)
-  }, 1000)
+  }, 500)
   closeDialog();
 };
 // 暴露变量

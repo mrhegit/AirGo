@@ -72,7 +72,7 @@ export const useUserStore = defineStore('userInfo', {
                 user: {
                     user_name: '',
                     nick_name: '',
-                    password: '',
+                    password: '123456',
                     avatar: '',
                     phone: '',
                     email: '',
@@ -88,7 +88,7 @@ export const useUserStore = defineStore('userInfo', {
                         node_connector: 3,
                     }
                 } as SysUser,
-                check_list: [''], //选中的角色
+                check_list: ['普通用户'], //选中的角色
             },
         },
     }),
@@ -111,6 +111,30 @@ export const useUserStore = defineStore('userInfo', {
 
     },
     actions: {
+        // 重置数据
+        async resetData() {
+            this.userManageData.dialog.user = {
+                user_name: '',
+                nick_name: '',
+                password: '123456',
+                avatar: '',
+                phone: '',
+                email: '',
+                enable: true,
+                role_group: [] as RowRoleType[],
+                subscribe_info: {
+                    sub_status: true,
+                    expired_at: '',
+                    t: 0,
+                    u: 0,
+                    d: 0,
+                    node_speedlimit: 0,
+                    node_connector: 3,
+                }
+            } as SysUser
+            this.userManageData.dialog.check_list=['普通用户']
+        },
+
         //注册
         async register(form?: object) {
             const referrerCode:string = Local.get('invitation')
