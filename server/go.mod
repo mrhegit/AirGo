@@ -1,6 +1,6 @@
 module AirGo
 
-go 1.21.1
+go 1.20.1
 
 require (
 	github.com/casbin/casbin/v2 v2.69.1
