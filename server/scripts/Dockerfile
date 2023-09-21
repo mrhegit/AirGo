@@ -10,7 +10,7 @@ WORKDIR /air
 
 VOLUME ["/air/config.yaml"]
 
-COPY server/AirGo-$TARGETOS-$TARGETARCH /air/
+COPY server/AirGo-$TARGETOS-$TARGETARCH /air/airgo
 
 ENV LANG C.UTF-8
 

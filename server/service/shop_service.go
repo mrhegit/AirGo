@@ -38,7 +38,7 @@ func FindGoodsByGoodsID(goodsID int64) (*model.Goods, error) {
 	return &goods, err
 }
 
-// 查询商品
+// 查询商品，通用查询，用结构体构造查询参数
 func FindGoods(goods *model.Goods) (*model.Goods, error) {
 	err := global.DB.Where(goods).First(&goods).Error
 	return goods, err

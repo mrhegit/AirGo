@@ -11,10 +11,32 @@ func CreateOrder(order *model.Orders) (*model.Orders, error) {
 	return order, err
 }
 
-// 更新数据库订单 by OutTradeNo
+// 更新数据库订单
 func UpdateOrder(order *model.Orders) error {
 	err := global.DB.Save(&order).Error
 	return err
+}
+
+// 更新数据库订单 for epay
+func UpdateOrderForEpay(epayOrder *model.EpayResponse, uIDInt int64) error {
+	//查询原始订单
+	var order = model.Orders{
+		UserID:     uIDInt,
+		OutTradeNo: epayOrder.OutTradeNo,
+	}
+	sysOrder, _ := GetOrderByOrderID(&order)
+
+	//sysOrder.PayType = "epay"
+	sysOrder.TradeNo = epayOrder.TradeNo
+	//sysOrder.OutTradeNo = epayOrder.OutTradeNo
+	//sysOrder.Subject = epayOrder.Name
+	//sysOrder.Price = epayOrder.Money
+	//sysOrder.TotalAmount = epayOrder.Money    //订单金额
+	//sysOrder.ReceiptAmount = epayOrder.Money  //实收金额
+	//sysOrder.BuyerPayAmount = epayOrder.Money //付款金额
+	sysOrder.TradeStatus = epayOrder.TradeStatus
+	return UpdateOrder(sysOrder)
+
 }
 
 // 获取全部订单,分页获取
